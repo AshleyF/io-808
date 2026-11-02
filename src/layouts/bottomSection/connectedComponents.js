@@ -63,8 +63,7 @@ export const ConnectedStartStopButton = props => {
 
   const dispatch = useDispatch();
   const onClick = React.useCallback(() => {
-    requestInit();
-    dispatch(onStartStopButtonClick());
+    requestInit().then(() => dispatch(onStartStopButtonClick()));
   }, [dispatch, requestInit]);
 
   return <Button {...props} disabled={disabled} onClick={onClick} />;

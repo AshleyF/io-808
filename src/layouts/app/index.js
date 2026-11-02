@@ -18,6 +18,11 @@ import {
   ConnectedLoadButton,
   ConnectedResetButton
 } from "./connectedComponents";
+import {
+  MpkHelpDialog,
+  MpkHelpLink,
+  MpkStatusButton
+} from "components/mpkPanel";
 
 const GithubLink = () => {
   return (
@@ -76,12 +81,27 @@ const styles = stylex.create({
   },
 
   headerWrapper: {
+    position: "relative",
     width: APP_WIDTH,
     height: HEADER_HEIGHT,
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
+  },
+
+  headerNote: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    pointerEvents: "none"
+  },
+
+  headerNoteLink: {
+    color: tokens.grey,
+    pointerEvents: "auto",
+    textDecoration: "underline"
   },
 
   saveLoadClearWrapper: {
@@ -179,6 +199,22 @@ const styles = stylex.create({
     }
   },
 
+  headerTools: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center"
+  },
+
+  footerLinks: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center"
+  },
+
+  footerMpk: {
+    marginLeft: 22
+  },
+
   authorLink: {
     color: tokens.grey
   }
@@ -201,7 +237,22 @@ const AppLayout = React.memo(
               />
               <ConnectedResetButton xstyle={styles.resetButton} />
             </div>
-            <GithubLink />
+            <div {...stylex.props(styles.headerNote, themeStyles.labelGreyLarge)}>
+              A fork of{" "}
+              <a
+                {...stylex.props(styles.headerNoteLink)}
+                href="https://io808.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                io808.com
+              </a>
+              , with MPK support added.
+            </div>
+            <div {...stylex.props(styles.headerTools)}>
+              <MpkStatusButton />
+              <GithubLink />
+            </div>
           </div>
           <div {...stylex.props(styles.appWrapper)}>
             <div {...stylex.props(styles.topBottomDivider)} />
@@ -217,19 +268,22 @@ const AppLayout = React.memo(
             </div>
           </div>
           <div {...stylex.props(styles.footerWrapper)}>
-            <div>
+            <div {...stylex.props(styles.footerLinks)}>
               <a
                 {...stylex.props(
                   themeStyles.labelBase,
                   themeStyles.labelGreyLarge,
                   themeStyles.autoCursor
                 )}
-                href="/tutorial"
+                href="tutorial.html"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Tutorial
               </a>
+              <div {...stylex.props(styles.footerMpk)}>
+                <MpkHelpLink />
+              </div>
             </div>
             <div
               {...stylex.props(
@@ -245,7 +299,17 @@ const AppLayout = React.memo(
                 rel="noopener noreferrer"
               >
                 Vincent Riemer
+              </a>{" "}
+              (
+              <a
+                {...stylex.props(styles.authorLink)}
+                href="https://github.com/ashleyf/io-808"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                MPK support added by AshleyF
               </a>
+              )
             </div>
             <div>
               <a
@@ -254,7 +318,7 @@ const AppLayout = React.memo(
                   themeStyles.labelGreyLarge,
                   themeStyles.autoCursor
                 )}
-                href="https://github.com/vincentriemer/io-808/issues"
+                href="https://github.com/ashleyf/io-808/issues"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -263,6 +327,7 @@ const AppLayout = React.memo(
             </div>
           </div>
         </div>
+        <MpkHelpDialog />
       </div>
     );
   },

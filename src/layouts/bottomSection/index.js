@@ -9,6 +9,8 @@ import TimeSignatureSection from "layouts/timeSignatureSection";
 import ArrowLabel from "components/arrowLabel";
 
 import { UNIMPLEMENTED_MODES } from "store-constants";
+import MidiHint from "components/midiHint";
+import { HINT, stepHint } from "midi/map";
 
 import {
   ConnectedBasicVariationSwitch,
@@ -338,7 +340,8 @@ function generateStepButtons() {
 
   ConnectedStepButtons.forEach((ConnectedStepButton, index) => {
     labeledButtons.push(
-      <div key={`stepbutton-${index}`} {...stylex.props(styles.stepWrapper)}>
+      <MidiHint key={`stepbutton-${index}`} text={stepHint(index)}>
+      <div {...stylex.props(styles.stepWrapper)}>
         <div {...stylex.props(styles.stepLabelWrapper)}>
           <div
             {...stylex.props(
@@ -366,6 +369,7 @@ function generateStepButtons() {
           </div>
         </div>
       </div>
+      </MidiHint>
     );
   });
 
@@ -432,7 +436,9 @@ const BottomSection = props => {
         </div>
         <div {...stylex.props(styles.controlWrapper)}>
           <div {...stylex.props(styles.leftSection)}>
-            <ConnectedBasicVariationSwitch />
+            <MidiHint text={HINT.variation}>
+              <ConnectedBasicVariationSwitch />
+            </MidiHint>
             <div
               {...stylex.props(
                 styles.horizontalSeparator,
@@ -440,6 +446,7 @@ const BottomSection = props => {
               )}
             />
             <div {...stylex.props(styles.buttonWrapper)}>
+              <MidiHint text={HINT.start}>
               <ConnectedStartStopButton
                 xstyle={[
                   styles.button,
@@ -473,10 +480,13 @@ const BottomSection = props => {
                   STOP
                 </div>
               </ConnectedStartStopButton>
+              </MidiHint>
             </div>
           </div>
           <div {...stylex.props(styles.rightSection)}>
-            <ConnectedIFVariationSwitch />
+            <MidiHint text={HINT.introFill}>
+              <ConnectedIFVariationSwitch />
+            </MidiHint>
             <div
               {...stylex.props(
                 styles.horizontalSeparator,
@@ -509,6 +519,7 @@ const BottomSection = props => {
               </div>
             </div>
             <div {...stylex.props(styles.buttonWrapper)}>
+              <MidiHint text={HINT.tap}>
               <ConnectedTapButton
                 xstyle={[
                   styles.button,
@@ -526,6 +537,7 @@ const BottomSection = props => {
                   TAP
                 </div>
               </ConnectedTapButton>
+              </MidiHint>
             </div>
           </div>
           <div {...stylex.props(styles.preScaleSection)}>

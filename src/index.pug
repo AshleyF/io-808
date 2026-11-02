@@ -11,18 +11,15 @@ html(lang="en")
         meta(name="apple-mobile-web-app-title" content="iO-808")
         meta(name="application-name" content="iO-808")
         meta(name="msapplication-TileColor" content="#da532c")
-        meta(name="msapplication-config" content="/static/icons/browserconfig.xml?v=3ewjeKmMeJ")
+        meta(name="msapplication-config" content="static/icons/browserconfig.xml?v=3ewjeKmMeJ")
         meta(name="theme-color" content="#232425")
 
-        // manifest
-        link(rel="manifest" href="/static/icons/site.webmanifest?v=3ewjeKmMeJ")
-
         // icons
-        link(rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png?v=3ewjeKmMeJ")
-        link(rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32x32.png?v=3ewjeKmMeJ")
-        link(rel="icon" type="image/png" sizes="16x16" href="/static/icons/favicon-16x16.png?v=3ewjeKmMeJ")
-        link(rel="mask-icon" href="/static/icons/safari-pinned-tab.svg?v=3ewjeKmMeJ" color="#232425")
-        link(rel="shortcut icon" href="/static/icons/favicon.ico?v=3ewjeKmMeJ")
+        link(rel="apple-touch-icon" sizes="180x180" href="static/icons/apple-touch-icon.png?v=3ewjeKmMeJ")
+        link(rel="icon" type="image/png" sizes="32x32" href="static/icons/favicon-32x32.png?v=3ewjeKmMeJ")
+        link(rel="icon" type="image/png" sizes="16x16" href="static/icons/favicon-16x16.png?v=3ewjeKmMeJ")
+        link(rel="mask-icon" href="static/icons/safari-pinned-tab.svg?v=3ewjeKmMeJ" color="#232425")
+        link(rel="shortcut icon" href="static/icons/favicon.ico?v=3ewjeKmMeJ")
 
         // apple splash screens
         link(href=require('../splashscreens/iphone5_splash.png'), media='(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)', rel='apple-touch-startup-image')
@@ -90,10 +87,9 @@ html(lang="en")
         // react render target
         #root.rendering
 
-        // main app bundle
-        script(type="module" src="/main.mjs")
+        // classic script so the page loads from a file:// URL
         each jsFile in htmlWebpackPlugin.files.js
-            script(nomodule src=jsFile)
+            script(src=jsFile)
         
         if trackerURL != null && trackerSiteID != null
             // fathom analytics
@@ -123,6 +119,6 @@ html(lang="en")
                     var mtTracking = document.createElement('script');
                     mtTracking.type='text/javascript';
                     mtTracking.async='true';
-                    mtTracking.src='/static/mtiFontTrackingCode.js';
+                    mtTracking.src='static/mtiFontTrackingCode.js';
                     (document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(mtTracking);
                 })();

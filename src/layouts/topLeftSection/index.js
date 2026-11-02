@@ -14,6 +14,8 @@ import {
   ConnectedInstrumentSelectorKnob,
   ConnectedModeKnob
 } from "./connectedComponents";
+import MidiHint from "components/midiHint";
+import { HINT } from "midi/map";
 
 const styles = stylex.create({
   wrapper: {
@@ -318,10 +320,16 @@ function TopLeftSection(props) {
           RHYTHM TRACK
         </div>
         <div {...stylex.props(styles.instrumentSelectorWrapper)}>
-          <ConnectedInstrumentSelectorKnob xstyle={styles.instrumentSelector} />
+          <MidiHint text={HINT.instrument}>
+            <ConnectedInstrumentSelectorKnob
+              xstyle={styles.instrumentSelector}
+            />
+          </MidiHint>
         </div>
         <div {...stylex.props(styles.autoFillInWrapper)}>
-          <ConnectedAutoFillInKnob xstyle={styles.autoFillIn} />
+          <MidiHint text={HINT.autoFill}>
+            <ConnectedAutoFillInKnob xstyle={styles.autoFillIn} />
+          </MidiHint>
         </div>
       </div>
       <div {...stylex.props(styles.modeWrapper)}>
@@ -330,7 +338,9 @@ function TopLeftSection(props) {
         <div {...labelProps(styles.manualPlay)}>MANUAL PLAY</div>
         <div {...labelProps(styles.play)}>PLAY</div>
         <div {...labelProps(styles.compose)}>COM- POSE</div>
-        <ConnectedModeKnob xstyle={styles.modeKnob} />
+        <MidiHint text={HINT.mode}>
+          <ConnectedModeKnob xstyle={styles.modeKnob} />
+        </MidiHint>
       </div>
       <div {...stylex.props(styles.clearWrapper)}>
         <div {...labelProps(styles.trackClear)}>TRACK CLEAR</div>
@@ -339,10 +349,14 @@ function TopLeftSection(props) {
         <ConnectedClearButton xstyle={styles.clearButton} />
       </div>
       <div {...stylex.props(styles.knobTempoWrapper)}>
-        <ConnectedTempoKnob xstyle={styles.tempoKnob} />
+        <MidiHint text={HINT.tempo}>
+          <ConnectedTempoKnob xstyle={styles.tempoKnob} />
+        </MidiHint>
       </div>
       <div {...stylex.props(styles.fineTempoWrapper)}>
-        <ConnectedFineTempoKnob xstyle={styles.fineTempoKnob} />
+        <MidiHint text={HINT.fine}>
+          <ConnectedFineTempoKnob xstyle={styles.fineTempoKnob} />
+        </MidiHint>
       </div>
     </div>
   );

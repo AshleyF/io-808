@@ -8,6 +8,8 @@ import InstrumentColumnLayout from "layouts/instrumentColumn";
 import InstrumentLabel from "components/instrumentLabel";
 import DrumSwitch from "components/drumSwitch";
 import DrumKnob from "components/drumKnob";
+import MidiHint from "components/midiHint";
+import { instrumentKnobHint, voiceHint } from "midi/map";
 
 export const EMPTY_CONTROL = "EMPTY";
 
@@ -72,14 +74,15 @@ const InstrumentColumn = props => {
     if (switchConfig != null) {
       const { name, values } = switchConfig;
       labelComponents.push(
-        <ConnectedDrumSwitch
-          key={`${type}-switch`}
-          name={name}
-          type={type}
-          values={values}
-          selector={controlState.selector}
-          onChange={onChange}
-        />
+        <MidiHint key={`${type}-switch`} text={voiceHint(type)}>
+          <ConnectedDrumSwitch
+            name={name}
+            type={type}
+            values={values}
+            selector={controlState.selector}
+            onChange={onChange}
+          />
+        </MidiHint>
       );
     }
     labelComponents.push(
@@ -90,27 +93,35 @@ const InstrumentColumn = props => {
   // create control section
   let controlComponents = [];
   controlComponents.push(
-    <ConnectedDrumKnob
+    <MidiHint
       key={`${type}-knob-level`}
-      type={type}
-      value={controlState.level}
-      onChange={onChange}
-      xstyle={styles.drumKnob}
-      controlName="level"
-      level
-    />
+      text={instrumentKnobHint(type, "level")}
+    >
+      <ConnectedDrumKnob
+        type={type}
+        value={controlState.level}
+        onChange={onChange}
+        xstyle={styles.drumKnob}
+        controlName="level"
+        level
+      />
+    </MidiHint>
   );
   controls.forEach((controlName, index) => {
     if (controlName !== EMPTY_CONTROL) {
       controlComponents.push(
-        <ConnectedDrumKnob
+        <MidiHint
           key={`${type}-knob-${index}`}
-          value={controlState[controlName]}
-          onChange={onChange}
-          xstyle={styles.drumKnob}
-          type={type}
-          controlName={controlName}
-        />
+          text={instrumentKnobHint(type, controlName)}
+        >
+          <ConnectedDrumKnob
+            value={controlState[controlName]}
+            onChange={onChange}
+            xstyle={styles.drumKnob}
+            type={type}
+            controlName={controlName}
+          />
+        </MidiHint>
       );
     } else {
       controlComponents.push(

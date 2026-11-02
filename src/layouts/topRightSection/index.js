@@ -4,6 +4,8 @@ import * as stylex from "@stylexjs/stylex";
 
 // Actions
 import { onInstrumentChange, onMasterVolumeChange } from "actionCreators";
+import MidiHint from "components/midiHint";
+import { HINT } from "midi/map";
 
 // Components
 import AppTitle from "components/appTitle";
@@ -72,6 +74,9 @@ const styles = stylex.create({
     width: 1,
     height: 345,
     backgroundColor: tokens.grey
+  },
+  selected: {
+    boxShadow: `inset 0 0 0 1px ${tokens.stencilOrange}`
   }
 });
 
@@ -177,6 +182,9 @@ function ConnectedInstrumentColumn(props) {
   const { config } = props;
 
   const controlState = useSelector(state => state.instrumentState[config.type]);
+  const selected = useSelector(
+    state => state.selectedInstrumentTrack === config.type
+  );
 
   const dispatch = useDispatch();
   const onChange = React.useCallback(
@@ -191,6 +199,11 @@ function ConnectedInstrumentColumn(props) {
       {...props}
       controlState={controlState}
       onChange={onChange}
+      xstyle={
+        selected
+          ? [styles.instrumentColumn, styles.selected]
+          : styles.instrumentColumn
+      }
     />
   );
 }
@@ -244,7 +257,9 @@ function TopRightSection(props) {
       <div {...stylex.props(styles.titleWrapper)}>
         <AppTitle xstyle={styles.appTitle} />
         <div {...stylex.props(styles.masterVolumeWrapper)}>
-          <ConnectedMasterVolumeKnob xstyle={styles.masterVolumeKnob} />
+          <MidiHint text={HINT.master}>
+            <ConnectedMasterVolumeKnob xstyle={styles.masterVolumeKnob} />
+          </MidiHint>
         </div>
       </div>
     </div>
