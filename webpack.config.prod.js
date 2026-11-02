@@ -114,7 +114,7 @@ const legacyConfig = {
   mode,
   entry,
   output: {
-    path: path.join(__dirname, "out"),
+    path: path.join(__dirname, "docs"),
     filename: "[name].bundle.js",
     publicPath: ""
   },
@@ -129,7 +129,7 @@ const moduleConfig = {
   mode,
   entry,
   output: {
-    path: path.join(__dirname, "out"),
+    path: path.join(__dirname, "docs"),
     filename: "[name].mjs",
     publicPath: ""
   },

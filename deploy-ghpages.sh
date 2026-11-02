@@ -1,10 +1,10 @@
 #!/bin/bash
 if [ "$TRAVIS_BRANCH" == "master" -a "$TRAVIS_PULL_REQUEST" == "false" ]; then
-    rm -rf out || exit 0;
-    mkdir out;
+    rm -rf docs || exit 0;
+    mkdir docs;
     npm run build;
-    cp CNAME out/CNAME
-    ( cd out
+    cp CNAME docs/CNAME
+    ( cd docs
      git init
      git config user.name "Travis-CI"
      git config user.email "vincentriemer@gmail.com"

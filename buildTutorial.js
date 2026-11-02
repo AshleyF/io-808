@@ -19,7 +19,7 @@ var stringRequire = function(module, filename) {
 require.extensions[".md"] = stringRequire;
 
 var srcDir = path.resolve("./tutorial");
-var outputDir = path.resolve("./out");
+var outputDir = path.resolve("./docs");
 
 function renderHtml(content, css) {
   var html = fn({
