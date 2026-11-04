@@ -5,6 +5,7 @@ import {
   MODE_FIRST_PART,
   MODE_SECOND_PART,
   MODE_MANUAL_PLAY,
+  MODE_RHYTHM_TRACK_COMPOSE,
   MODE_TO_PART_MAPPING,
   FIRST_PART,
   SECOND_PART
@@ -59,7 +60,8 @@ export default (state, stepNumber) => {
           draft.steps[key] = !state.steps[key];
         });
       }
-      case MODE_MANUAL_PLAY: {
+      case MODE_MANUAL_PLAY:
+      case MODE_RHYTHM_TRACK_COMPOSE: {
         if (stepNumber < 12) {
           if (currentPart === FIRST_PART && currentStep < 4) {
             // change pattern immediately
@@ -93,7 +95,8 @@ export default (state, stepNumber) => {
           draft.selectedPattern = stepNumber;
         });
       }
-      case MODE_MANUAL_PLAY: {
+      case MODE_MANUAL_PLAY:
+      case MODE_RHYTHM_TRACK_COMPOSE: {
         return produce(state, draft => {
           if (stepNumber < 12) {
             draft.selectedPlayPattern = stepNumber;

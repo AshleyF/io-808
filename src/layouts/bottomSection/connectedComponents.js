@@ -31,7 +31,8 @@ import {
   MODE_PATTERN_CLEAR,
   MODE_FIRST_PART,
   MODE_SECOND_PART,
-  MODE_MANUAL_PLAY
+  MODE_MANUAL_PLAY,
+  MODE_RHYTHM_TRACK_COMPOSE
 } from "store-constants";
 
 export const ConnectedBasicVariationSwitch = props => {
@@ -92,6 +93,7 @@ export const ConnectedTapButton = props => {
       case MODE_SECOND_PART:
         return !state.playing;
       case MODE_MANUAL_PLAY:
+      case MODE_RHYTHM_TRACK_COMPOSE:
         return false;
       default:
         return true;

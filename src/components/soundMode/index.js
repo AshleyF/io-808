@@ -14,7 +14,8 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 18
+    marginRight: 0,
+    marginBottom: 14
   },
   label: {
     marginRight: 8,
@@ -25,7 +26,7 @@ const styles = stylex.create({
     letterSpacing: tokens.letterSpacing
   },
   select: {
-    maxWidth: 220,
+    maxWidth: 360,
     backgroundColor: tokens.darkBlack,
     color: tokens.drumLabel,
     borderWidth: 1,
@@ -45,23 +46,17 @@ const SoundModeButton = () => {
   React.useEffect(() => subscribeSound(() => setSnap(getSoundSnapshot())), []);
 
   const value = snap.mode === "midi" ? snap.outputId : AUDIO_ONLY;
-  const other = [];
-  const mpk = [];
-  snap.outputs.forEach(port => {
-    if (port.name.indexOf("MPK ") === 0) mpk.push(port);
-    else other.push(port);
-  });
+  const other = snap.outputs;
 
   return (
     <div {...stylex.props(styles.row)}>
-      <span {...stylex.props(styles.label)}>MIDI</span>
+      <span {...stylex.props(styles.label)}>Sound output</span>
       <select
         {...stylex.props(styles.select)}
         value={value}
         title="Audio only plays the drums here. An output sends channel 10 notes and stays quiet."
         onChange={event => {
           const next = event.target.value;
-          if (next === "mpk-divider") return;
           if (next === CHOOSE_MIDI) {
             ensureMidiOutputs();
             return;
@@ -74,16 +69,6 @@ const SoundModeButton = () => {
           <option value={CHOOSE_MIDI}>Choose MIDI output…</option>
         )}
         {other.map(port => (
-          <option key={port.id} value={port.id}>
-            {port.name}
-          </option>
-        ))}
-        {mpk.length > 0 ? (
-          <option disabled value="mpk-divider">
-            ────────
-          </option>
-        ) : null}
-        {mpk.map(port => (
           <option key={port.id} value={port.id}>
             {port.name}
           </option>

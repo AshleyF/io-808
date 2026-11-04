@@ -20,7 +20,9 @@ import {
   MODE_PATTERN_CLEAR,
   MODE_FIRST_PART,
   MODE_SECOND_PART,
-  MODE_MANUAL_PLAY
+  MODE_MANUAL_PLAY,
+  MODE_RHYTHM_TRACK_PLAY,
+  MODE_RHYTHM_TRACK_COMPOSE
 } from "store-constants";
 import stepButtonSelector from "selectors/stepButton";
 import { requestAudioInit } from "audioCtxContext";
@@ -28,12 +30,12 @@ import { pulse } from "midi/highlight";
 import { noteMidiAccess } from "midi/out";
 import {
   INSTRUMENTS,
-  NOTE_TO_STEP,
   STEPS,
   dimRgb,
   instrumentById,
   knobLine
 } from "midi/map";
+import { getController, subscribeController } from "midi/controllerMap";
 import {
   assertSysex,
   padColorMessage,
@@ -45,23 +47,15 @@ const MODE_CYCLE = [
   MODE_PATTERN_CLEAR,
   MODE_FIRST_PART,
   MODE_SECOND_PART,
-  MODE_MANUAL_PLAY
+  MODE_MANUAL_PLAY,
+  MODE_RHYTHM_TRACK_PLAY,
+  MODE_RHYTHM_TRACK_COMPOSE
 ];
 
 const STEP_LIGHTS = [];
 for (let step = 0; step < 16; step++) {
   STEP_LIGHTS.push(stepButtonSelector(step));
 }
-
-const CC_MOD = 1;
-const CC_ENCODER_PRESS = 13;
-const CC_ENCODER = 14;
-const CC_SHIFT = 17;
-const CC_MINUS = 80;
-const CC_PLUS = 81;
-const CC_TAP = 82;
-const CC_RECORD = 77;
-const TRANSPORT_CC = { 76: true, 117: true, 118: true };
 
 let redux = null;
 let access = null;
@@ -83,12 +77,13 @@ const lastPress = {};
 const stepAt = new Array(16).fill(0);
 const knobSeen = {};
 const knobSent = {};
+const knobLive = {};
 
 const listeners = [];
 let snapshot = {
   open: false,
   status: "idle",
-  message: "Plug in the MPK Mini 4 and connect it."
+  message: "Plug in a controller and connect it."
 };
 
 function publish(patch) {
@@ -140,6 +135,7 @@ function resetHardwareCache() {
   painted = new Array(16);
   Object.keys(knobSeen).forEach(key => delete knobSeen[key]);
   Object.keys(knobSent).forEach(key => delete knobSent[key]);
+  Object.keys(knobLive).forEach(key => delete knobLive[key]);
 }
 
 function send(bytes) {
@@ -160,7 +156,7 @@ function onSendError() {
   resetHardwareCache();
   publish({
     status: "error",
-    message: "The MPK output closed. Press Connect and try again."
+    message: "The controller output closed. Press Connect and try again."
   });
 }
 
@@ -251,7 +247,14 @@ function describeChange(prev, next) {
 
   const notes = [];
   if (prev.id !== next.id) {
-    notes.push(instrumentById(next.id).name);
+    if (
+      next.mode === MODE_RHYTHM_TRACK_PLAY ||
+      next.mode === MODE_RHYTHM_TRACK_COMPOSE
+    ) {
+      notes.push("Track " + (next.id + 1));
+    } else {
+      notes.push(instrumentById(next.id).name);
+    }
   } else {
     if (prev.selector !== next.selector) {
       const inst = instrumentById(next.id);
@@ -344,20 +347,18 @@ function describe() {
     return {
       status: "error",
       message:
-        "MIDI is allowed, but no MPK Mini port is connected. Plug it in and press Connect."
+        "MIDI is allowed, but no controller is connected. Plug one in and press Connect."
     };
   }
   const names = inputs
-    .map(port => port.name || "MPK")
+    .map(port => port.name || "Controller")
     .filter((name, index, all) => all.indexOf(name) === index)
     .join(", ");
   let message = "Listening on " + names + ".";
-  if (!sysexOk) {
+  if (output && !sysexOk) {
     message += " Pad lights need SysEx permission. Press Connect and allow it.";
   } else if (output) {
-    message += " Pad lights go out through " + (output.name || "the MPK") + ".";
-  } else {
-    message += " No MPK output is open, so the pads will not light.";
+    message += " Pad lights go out through " + (output.name || "the controller") + ".";
   }
   return { status: "ready", message };
 }
@@ -365,7 +366,7 @@ function describe() {
 function bindPorts() {
   if (!access) return;
   for (let i = 0; i < inputs.length; i++) inputs[i].onmidimessage = null;
-  inputs = portList(access.inputs).filter(isMpk);
+  inputs = portList(access.inputs);
   for (let i = 0; i < inputs.length; i++) inputs[i].onmidimessage = onMidi;
   const pool = portList(access.outputs).filter(isMpk);
   const next =
@@ -475,39 +476,45 @@ function setRange(key, cc, current, min, max, step, apply) {
   return true;
 }
 
-// A mode knob only has a few positions. Step once from wherever the page
-// already is, then put the encoder back on that position so the next click
-// starts there too.
-function nudgeZone(key, ccNumber, cc, current, count, apply) {
+// Mode shares the whole 0–127 travel: 0 is Pattern Clear, 127 is Compose.
+// The encoder stays where it is turned. It is only sent back to the middle
+// of the on-screen position when that position was chosen somewhere else.
+function travelZone(key, ccNumber, cc, current, count, apply) {
   if (knobSent[key] === cc) return false;
   const prev = knobSeen[key];
-  let step = relativeDelta(cc);
-  if (step === 0 && prev != null && cc !== prev) {
-    let delta = cc - prev;
-    if (delta > 64) delta -= 128;
-    if (delta < -64) delta += 128;
-    if (Math.abs(delta) > 8) {
-      const park = ccForZone(current, count);
-      rememberKnob(key, park);
-      send([0xb0, ccNumber, park]);
-      return false;
-    }
-    step = delta > 0 ? 1 : -1;
+  if (prev == null) {
+    const park = ccForZone(current, count);
+    rememberKnob(key, park);
+    knobLive[key] = false;
+    send([0xb0, ccNumber, park]);
+    return false;
   }
-  if (step === 0) {
-    if (prev == null) {
-      const park = ccForZone(current, count);
+  const dir = relativeDelta(cc);
+  if (dir !== 0 && Math.abs(cc - prev) > 2) {
+    const nextPos = Math.max(0, Math.min(127, prev + dir));
+    knobSeen[key] = nextPos;
+    const stepped = zone(nextPos, count);
+    if (stepped !== current) apply(stepped);
+    return stepped !== current;
+  }
+  let delta = cc - prev;
+  if (delta > 64) delta -= 128;
+  if (delta < -64) delta += 128;
+  if (Math.abs(delta) > 16 && zone(cc, count) !== current && !knobLive[key]) {
+    const park = ccForZone(current, count);
+    if (knobSent[key] !== park) {
       rememberKnob(key, park);
+      knobLive[key] = false;
       send([0xb0, ccNumber, park]);
     }
     return false;
   }
-  const next = Math.max(0, Math.min(count - 1, current + step));
-  const park = ccForZone(next, count);
-  rememberKnob(key, park);
-  send([0xb0, ccNumber, park]);
-  if (next !== current) apply(next);
-  return next !== current;
+  if (cc === prev) return false;
+  knobLive[key] = true;
+  knobSeen[key] = cc;
+  const target = zone(cc, count);
+  if (target !== current) apply(target);
+  return target !== current;
 }
 
 function setZone(key, cc, current, count, apply, invert) {
@@ -531,6 +538,7 @@ function setZone(key, cc, current, count, apply, invert) {
 function placeKnob(key, ccNumber, targetCc) {
   if (knobSent[key] === targetCc) return;
   rememberKnob(key, targetCc);
+  knobLive[key] = false;
   send([0xb0, ccNumber, targetCc]);
 }
 
@@ -541,40 +549,57 @@ function valueParked(key, value, min, max, step) {
 
 function placeKnobs(state) {
   if (!output || !state) return;
+  const map = getController().map;
+  const knobs = map.knobs;
   const id = state.selectedInstrumentTrack;
   const slot = state.instrumentState[id] || {};
   const inst = instrumentById(id);
-  if (!valueParked("k1", slot.level, 0, 100, 2)) {
-    placeKnob("k1", 24, ccForValue(slot.level, 0, 100, 2));
+  if (knobs[0] != null && !valueParked("k1", slot.level, 0, 100, 2)) {
+    placeKnob("k1", knobs[0], ccForValue(slot.level, 0, 100, 2));
   }
-  if (inst.extra[0] != null && !valueParked("k2", slot[inst.extra[0]], 0, 100, 2)) {
-    placeKnob("k2", 25, ccForValue(slot[inst.extra[0]], 0, 100, 2));
+  if (
+    knobs[1] != null &&
+    inst.extra[0] != null &&
+    !valueParked("k2", slot[inst.extra[0]], 0, 100, 2)
+  ) {
+    placeKnob("k2", knobs[1], ccForValue(slot[inst.extra[0]], 0, 100, 2));
   }
-  if (inst.extra[1] != null && !valueParked("k3", slot[inst.extra[1]], 0, 100, 2)) {
-    placeKnob("k3", 26, ccForValue(slot[inst.extra[1]], 0, 100, 2));
+  if (
+    knobs[2] != null &&
+    inst.extra[1] != null &&
+    !valueParked("k3", slot[inst.extra[1]], 0, 100, 2)
+  ) {
+    placeKnob("k3", knobs[2], ccForValue(slot[inst.extra[1]], 0, 100, 2));
   }
-  if (!valueParked("master", state.masterVolume, 0, 100, 1)) {
-    placeKnob("master", 31, ccForValue(state.masterVolume, 0, 100, 1));
+  if (knobs[7] != null && !valueParked("master", state.masterVolume, 0, 100, 1)) {
+    placeKnob("master", knobs[7], ccForValue(state.masterVolume, 0, 100, 1));
   }
-  if (!valueParked("fine", state.fineTempo, -6.75, 6.75, 0.1)) {
-    placeKnob("fine", 29, ccForValue(state.fineTempo, -6.75, 6.75, 0.1));
+  if (knobs[5] != null && !valueParked("fine", state.fineTempo, -6.75, 6.75, 0.1)) {
+    placeKnob("fine", knobs[5], ccForValue(state.fineTempo, -6.75, 6.75, 0.1));
   }
-  if (!valueParked("mod", state.tempo, 30, 300, 6.75)) {
-    placeKnob("mod", 1, ccForValue(state.tempo, 30, 300, 6.75));
+  if (map.mod != null && !valueParked("mod", state.tempo, 30, 300, 6.75)) {
+    placeKnob("mod", map.mod, ccForValue(state.tempo, 30, 300, 6.75));
   }
-  if (knobSeen.fill == null || zone(knobSeen.fill, 6) !== state.autoFillInPosition) {
-    placeKnob("fill", 28, ccForZone(state.autoFillInPosition, 6));
+  if (
+    knobs[4] != null &&
+    (knobSeen.fill == null || zone(knobSeen.fill, 6) !== state.autoFillInPosition)
+  ) {
+    placeKnob("fill", knobs[4], ccForZone(state.autoFillInPosition, 6));
   }
-  const scale = state.preScalePosition == null ? 2 : state.preScalePosition;
-  if (knobSeen.scale == null || 3 - zone(knobSeen.scale, 4) !== scale) {
-    placeKnob("scale", 30, ccForZone(3 - scale, 4));
+  const scalePos = state.preScalePosition == null ? 2 : state.preScalePosition;
+  if (
+    knobs[6] != null &&
+    (knobSeen.scale == null || 3 - zone(knobSeen.scale, 4) !== scalePos)
+  ) {
+    placeKnob("scale", knobs[6], ccForZone(3 - scalePos, 4));
   }
   const modeIndex = MODE_CYCLE.indexOf(state.selectedMode);
   if (
+    knobs[3] != null &&
     modeIndex >= 0 &&
     (knobSeen.mode == null || zone(knobSeen.mode, MODE_CYCLE.length) !== modeIndex)
   ) {
-    placeKnob("mode", 27, ccForZone(modeIndex, MODE_CYCLE.length));
+    placeKnob("mode", knobs[3], ccForZone(modeIndex, MODE_CYCLE.length));
   }
 }
 
@@ -582,9 +607,10 @@ function selectedExtra(state, index) {
   return instrumentById(state.selectedInstrumentTrack).extra[index];
 }
 
-function onKnob(state, cc, value) {
+function onKnob(state, slot, value) {
   const id = state.selectedInstrumentTrack;
-  if (cc === 24) {
+  const ccNumber = getController().map.knobs[slot];
+  if (slot === 0) {
     if (
       setRange(
         "k1",
@@ -600,12 +626,12 @@ function onKnob(state, cc, value) {
     }
     return;
   }
-  if (cc === 25 || cc === 26) {
-    const control = selectedExtra(state, cc === 25 ? 0 : 1);
+  if (slot === 1 || slot === 2) {
+    const control = selectedExtra(state, slot - 1);
     if (!control) return;
     if (
       setRange(
-        cc === 25 ? "k2" : "k3",
+        slot === 1 ? "k2" : "k3",
         value,
         state.instrumentState[id][control],
         0,
@@ -618,11 +644,11 @@ function onKnob(state, cc, value) {
     }
     return;
   }
-  if (cc === 27) {
+  if (slot === 3) {
     const found = MODE_CYCLE.indexOf(state.selectedMode);
     const current = found < 0 ? 0 : found;
     if (
-      nudgeZone("mode", 27, value, current, MODE_CYCLE.length, next =>
+      travelZone("mode", ccNumber, value, current, MODE_CYCLE.length, next =>
         redux.dispatch(onModeChange(MODE_CYCLE[next]))
       )
     ) {
@@ -630,7 +656,7 @@ function onKnob(state, cc, value) {
     }
     return;
   }
-  if (cc === 28) {
+  if (slot === 4) {
     if (
       setZone("fill", value, state.autoFillInPosition, 6, next =>
         redux.dispatch(onAutoFillInChange(next))
@@ -640,7 +666,7 @@ function onKnob(state, cc, value) {
     }
     return;
   }
-  if (cc === 29) {
+  if (slot === 5) {
     if (
       setRange("fine", value, state.fineTempo, -6.75, 6.75, 0.1, next =>
         redux.dispatch(onFineTempoChange(next))
@@ -650,7 +676,7 @@ function onKnob(state, cc, value) {
     }
     return;
   }
-  if (cc === 30) {
+  if (slot === 6) {
     const current = state.preScalePosition == null ? 2 : state.preScalePosition;
     if (
       setZone(
@@ -666,7 +692,7 @@ function onKnob(state, cc, value) {
     }
     return;
   }
-  if (cc === 31) {
+  if (slot === 7) {
     if (
       setRange("master", value, state.masterVolume, 0, 100, 1, next =>
         redux.dispatch(onMasterVolumeChange(next))
@@ -762,30 +788,26 @@ function onEncoder(state, value) {
 }
 
 function onCC(state, cc, value, ch, portId) {
-  if (cc === CC_MOD) {
-    onModWheel(state, value);
-    return;
-  }
-  if (cc >= 24 && cc <= 31) {
-    onKnob(state, cc, value);
-    return;
-  }
-  if (cc === CC_ENCODER_PRESS) {
+  const map = getController().map;
+  if (map.encoderPress != null && cc === map.encoderPress) {
     if (rising("encoder-press", portId, ch, cc, value)) onEncoderPress(state);
     return;
   }
-  if (cc === CC_ENCODER) {
+  if (map.encoder != null && cc === map.encoder) {
     onEncoder(state, value);
     return;
   }
-  if (cc === CC_SHIFT) {
+  if (map.shift != null && cc === map.shift) {
     shiftDown = value > 0;
     return;
   }
-  if (cc === CC_RECORD) {
+  if (map.record != null && cc === map.record) {
     if (!press("record", portId, ch, cc, value)) return;
     pulse("clear");
-    if (state.selectedMode === MODE_PATTERN_CLEAR) {
+    if (
+      state.selectedMode === MODE_PATTERN_CLEAR ||
+      state.selectedMode === MODE_RHYTHM_TRACK_COMPOSE
+    ) {
       lengthArmedAt = 0;
       redux.dispatch(onClearDown());
       redux.dispatch(onClearUp());
@@ -797,23 +819,38 @@ function onCC(state, cc, value, ch, portId) {
     }
     return;
   }
-  if (cc === CC_MINUS || cc === CC_PLUS) {
-    if (rising(cc === CC_PLUS ? "plus" : "minus", portId, ch, cc, value)) {
-      if (shiftDown) onIntroFill(state, cc === CC_PLUS);
-      else onMinusPlus(state, cc === CC_PLUS);
+  if (
+    (map.minus != null && cc === map.minus) ||
+    (map.plus != null && cc === map.plus)
+  ) {
+    const up = cc === map.plus;
+    if (rising(up ? "plus" : "minus", portId, ch, cc, value)) {
+      if (shiftDown) onIntroFill(state, up);
+      else onMinusPlus(state, up);
     }
     return;
   }
-  if (TRANSPORT_CC[cc]) {
-    onTransportMessage(portId, ch, cc, value);
-    return;
-  }
-  if (cc === CC_TAP) {
+  if (map.tap != null && cc === map.tap) {
     if (press("tap", portId, ch, cc, value)) {
       pulse("tap");
       redux.dispatch(onTapButtonClick());
     }
+    return;
   }
+  if (
+    (map.play != null && cc === map.play) ||
+    (map.playAlso != null && cc === map.playAlso) ||
+    (map.stop != null && cc === map.stop)
+  ) {
+    onTransportMessage(portId, ch, cc, value);
+    return;
+  }
+  if (map.mod != null && cc === map.mod) {
+    onModWheel(state, value);
+    return;
+  }
+  const slot = map.knobs.indexOf(cc);
+  if (slot >= 0) onKnob(state, slot, value);
 }
 
 function onMidi(event) {
@@ -832,7 +869,14 @@ function onMidi(event) {
   if (cmd === 0x90) {
     const velocity = data[2] || 0;
     if (velocity === 0) return;
-    const step = NOTE_TO_STEP[data[1]];
+    const pads = getController().map.pads;
+    let step = null;
+    for (let i = 0; i < pads.length; i++) {
+      if (pads[i] === data[1]) {
+        step = i;
+        break;
+      }
+    }
     if (step == null) return;
     if (now - stepAt[step] < 40) return;
     stepAt[step] = now;
@@ -866,6 +910,12 @@ export function attachMpk(store) {
     console.error(error);
   }
   store.subscribe(() => syncHardware(store.getState()));
+  subscribeController(() => {
+    Object.keys(knobSeen).forEach(key => delete knobSeen[key]);
+    Object.keys(knobSent).forEach(key => delete knobSent[key]);
+    Object.keys(knobLive).forEach(key => delete knobLive[key]);
+    if (redux) syncHardware(redux.getState());
+  });
   window.addEventListener("click", () => {
     requestAudioInit();
   });

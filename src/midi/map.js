@@ -120,22 +120,22 @@ export const CONTROL_SHORT = {
 };
 
 export const HINT = {
-  instrument: "MPK encoder · instrument",
-  master: "MPK knob 8 · master",
-  tempo: "MPK mod wheel · tempo",
-  fine: "MPK knob 6 · fine tempo",
-  variation: "MPK − and + · basic variation",
-  introFill: "MPK Shift and − / + · I/F variation",
-  preScale: "MPK knob 7 · pre-scale",
-  autoFill: "MPK knob 5 · auto fill",
-  start: "MPK Stop/Play",
-  tap: "MPK Tap · intro/fill",
-  mode: "MPK knob 4 · mode",
+  instrument: "Encoder · instrument, or rhythm track",
+  master: "Knob 8 · master",
+  tempo: "Mod wheel · tempo",
+  fine: "Knob 6 · fine tempo",
+  variation: "− and + · basic variation",
+  introFill: "Shift and − / + · I/F variation",
+  preScale: "Knob 7 · pre-scale",
+  autoFill: "Knob 5 · auto fill",
+  start: "Start/Stop",
+  tap: "Tap · intro/fill",
+  mode: "Knob 4 · mode",
   clear:
-    "MPK Record clears in Pattern Clear. Record, then a pad, sets the length."
+    "Record clears in Pattern Clear. Record, then a pad, sets the length."
 };
 
-// Knobs 1–8 are CC 24–31, the numbers Akai's MPK Mini 4 playground reads.
+// Knobs 1–8. The default preset puts these on CC 24–31.
 export const KNOBS = [
   {
     n: 1,
@@ -161,7 +161,8 @@ export const KNOBS = [
     n: 4,
     cc: 27,
     name: "Mode",
-    detail: "Pattern Clear, 1st Part, 2nd Part, and Manual Play."
+    detail:
+      "Pattern Clear, 1st Part, 2nd Part, Manual Play, Play, and Compose."
   },
   {
     n: 5,
@@ -192,32 +193,35 @@ export const KNOBS = [
 
 export const BUTTONS = [
   {
-    name: "Center encoder",
+    name: "Encoder",
     detail:
-      "Turn it to step through the instruments. The orange outline is the column knobs 1–3 are editing. Press it to switch conga/tom, claves/rimshot, or maracas/handclap."
+      "Turn it to step through the instruments. In Play and Compose it selects rhythm track 1–12. Press it to switch conga/tom, claves/rimshot, or maracas/handclap."
   },
   {
     name: "− and +",
-    detail:
-      "Step Basic Variation toward A or toward B. Hold Shift for I/F Variation, A or B."
+    detail: "Step Basic Variation toward A or toward B."
+  },
+  {
+    name: "Shift",
+    detail: "Hold it with − or + for I/F Variation, A or B."
   },
   {
     name: "Mod wheel",
     detail: "Tempo."
   },
   {
-    name: "Stop / Play",
-    detail: "Same as Start/Stop."
+    name: "Start/Stop",
+    detail: "Play and Stop both start and stop the sequencer."
   },
   {
-    name: "Tap Tempo",
+    name: "Tap",
     detail:
-      "Same as TAP. In Manual Play that arms the intro/fill, the way the button on the panel does."
+      "Same as TAP. In Manual Play and Compose that arms the intro/fill."
   },
   {
     name: "Record",
     detail:
-      "The round button beside Stop/Play. In Pattern Clear it clears the selected pattern. In 1st Part or 2nd Part, press it and then a pad to set that step as the last step."
+      "In Pattern Clear it clears the selected pattern. In Compose it clears the selected rhythm track. In 1st Part or 2nd Part, press it and then a pad to set that step as the last step."
   }
 ];
 
@@ -305,17 +309,17 @@ export function knobIndexFor(id, controlName) {
 export function instrumentKnobHint(id, controlName) {
   const knob = knobIndexFor(id, controlName);
   if (!knob) return "";
-  return "MPK knob " + knob + " · " + CONTROL_LABELS[controlName];
+  return "Knob " + knob + " · " + CONTROL_LABELS[controlName];
 }
 
 export function voiceHint(id) {
   const inst = instrumentById(id);
   if (!inst.voices) return "";
-  return "MPK encoder press · " + inst.voices[0] + " / " + inst.voices[1];
+  return "Encoder press · " + inst.voices[0] + " / " + inst.voices[1];
 }
 
 export function stepHint(step) {
-  return "MPK pad · step " + (step + 1) + ". Record, then this pad, sets the length.";
+  return "Pad · step " + (step + 1) + ". Record, then this pad, sets the length.";
 }
 
 export function dimRgb(rgb) {

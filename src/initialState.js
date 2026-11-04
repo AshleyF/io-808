@@ -15,9 +15,16 @@ import {
   SECOND_PART,
   A_VARIATION,
   B_VARIATION,
+  RHYTHM_TRACK_COUNT
 } from "store-constants";
 
 import { stepKey, patternLengthKey } from "helpers";
+
+function emptyRhythmTracks() {
+  const tracks = [];
+  for (let i = 0; i < RHYTHM_TRACK_COUNT; i++) tracks.push([]);
+  return tracks;
+}
 
 const PARTS = [FIRST_PART, SECOND_PART];
 const VARIATIONS = [A_VARIATION, B_VARIATION];
@@ -119,6 +126,7 @@ export default {
 
   selectedMode: 1,
   selectedInstrumentTrack: 1,
+  rhythmTracks: emptyRhythmTracks(),
 
   masterVolume: 70,
 

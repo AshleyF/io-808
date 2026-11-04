@@ -19,11 +19,10 @@ import {
   ConnectedResetButton
 } from "./connectedComponents";
 import {
-  MpkHelpDialog,
-  MpkHelpLink,
-  MpkStatusButton
-} from "components/mpkPanel";
-import SoundModeButton from "components/soundMode";
+  ControllerLink,
+  ControllerStatus,
+  SettingsDialog
+} from "components/settings";
 import AudioUnlock from "components/audioUnlock";
 
 const GithubLink = () => {
@@ -249,11 +248,10 @@ const AppLayout = React.memo(
               >
                 io808.com
               </a>
-              , with MPK support added.
+              , with MIDI controller support added.
             </div>
             <div {...stylex.props(styles.headerTools)}>
-              <SoundModeButton />
-              <MpkStatusButton />
+              <ControllerStatus />
               <GithubLink />
             </div>
           </div>
@@ -285,7 +283,7 @@ const AppLayout = React.memo(
                 Tutorial
               </a>
               <div {...stylex.props(styles.footerMpk)}>
-                <MpkHelpLink />
+                <ControllerLink />
               </div>
             </div>
             <div
@@ -310,7 +308,7 @@ const AppLayout = React.memo(
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                MPK support added by AshleyF
+                MIDI controller support added by AshleyF
               </a>
               )
             </div>
@@ -330,7 +328,7 @@ const AppLayout = React.memo(
             </div>
           </div>
         </div>
-        <MpkHelpDialog />
+        <SettingsDialog />
         <AudioUnlock />
       </div>
     );
