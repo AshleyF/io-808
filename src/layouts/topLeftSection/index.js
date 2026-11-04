@@ -320,14 +320,14 @@ function TopLeftSection(props) {
           RHYTHM TRACK
         </div>
         <div {...stylex.props(styles.instrumentSelectorWrapper)}>
-          <MidiHint text={HINT.instrument}>
+          <MidiHint mark="instrument" text={HINT.instrument}>
             <ConnectedInstrumentSelectorKnob
               xstyle={styles.instrumentSelector}
             />
           </MidiHint>
         </div>
         <div {...stylex.props(styles.autoFillInWrapper)}>
-          <MidiHint text={HINT.autoFill}>
+          <MidiHint mark="autoFill" text={HINT.autoFill}>
             <ConnectedAutoFillInKnob xstyle={styles.autoFillIn} />
           </MidiHint>
         </div>
@@ -338,7 +338,7 @@ function TopLeftSection(props) {
         <div {...labelProps(styles.manualPlay)}>MANUAL PLAY</div>
         <div {...labelProps(styles.play)}>PLAY</div>
         <div {...labelProps(styles.compose)}>COM- POSE</div>
-        <MidiHint text={HINT.mode}>
+        <MidiHint mark="mode" text={HINT.mode}>
           <ConnectedModeKnob xstyle={styles.modeKnob} />
         </MidiHint>
       </div>
@@ -346,15 +346,17 @@ function TopLeftSection(props) {
         <div {...labelProps(styles.trackClear)}>TRACK CLEAR</div>
         <div {...labelProps(styles.stepNumber)}>STEP NUMBER</div>
         <div {...labelProps(styles.preScale)}>PRE- SCALE</div>
-        <ConnectedClearButton xstyle={styles.clearButton} />
+        <MidiHint mark="clear" text={HINT.clear}>
+          <ConnectedClearButton xstyle={styles.clearButton} />
+        </MidiHint>
       </div>
       <div {...stylex.props(styles.knobTempoWrapper)}>
-        <MidiHint text={HINT.tempo}>
+        <MidiHint mark="tempo" text={HINT.tempo}>
           <ConnectedTempoKnob xstyle={styles.tempoKnob} />
         </MidiHint>
       </div>
       <div {...stylex.props(styles.fineTempoWrapper)}>
-        <MidiHint text={HINT.fine}>
+        <MidiHint mark="fine" text={HINT.fine}>
           <ConnectedFineTempoKnob xstyle={styles.fineTempoKnob} />
         </MidiHint>
       </div>

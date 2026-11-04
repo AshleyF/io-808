@@ -155,11 +155,6 @@ const styles = stylex.create({
     alignItems: "center",
     justifyContent: "space-between"
   },
-  preScaleSwitchWrapper: {
-    // Disable the switch until pre-scale functionality is implemented.
-    pointerEvents: "none",
-    opacity: 0.5
-  },
   preScaleBottomSection: {
     width: "100%",
     height: 115,
@@ -340,7 +335,7 @@ function generateStepButtons() {
 
   ConnectedStepButtons.forEach((ConnectedStepButton, index) => {
     labeledButtons.push(
-      <MidiHint key={`stepbutton-${index}`} text={stepHint(index)}>
+      <MidiHint key={`stepbutton-${index}`} mark={`step-${index}`} text={stepHint(index)}>
       <div {...stylex.props(styles.stepWrapper)}>
         <div {...stylex.props(styles.stepLabelWrapper)}>
           <div
@@ -436,7 +431,7 @@ const BottomSection = props => {
         </div>
         <div {...stylex.props(styles.controlWrapper)}>
           <div {...stylex.props(styles.leftSection)}>
-            <MidiHint text={HINT.variation}>
+            <MidiHint mark="variation" text={HINT.variation}>
               <ConnectedBasicVariationSwitch />
             </MidiHint>
             <div
@@ -446,7 +441,7 @@ const BottomSection = props => {
               )}
             />
             <div {...stylex.props(styles.buttonWrapper)}>
-              <MidiHint text={HINT.start}>
+              <MidiHint mark="start" text={HINT.start}>
               <ConnectedStartStopButton
                 xstyle={[
                   styles.button,
@@ -484,7 +479,7 @@ const BottomSection = props => {
             </div>
           </div>
           <div {...stylex.props(styles.rightSection)}>
-            <MidiHint text={HINT.introFill}>
+            <MidiHint mark="introFill" text={HINT.introFill}>
               <ConnectedIFVariationSwitch />
             </MidiHint>
             <div
@@ -519,7 +514,7 @@ const BottomSection = props => {
               </div>
             </div>
             <div {...stylex.props(styles.buttonWrapper)}>
-              <MidiHint text={HINT.tap}>
+              <MidiHint mark="tap" text={HINT.tap}>
               <ConnectedTapButton
                 xstyle={[
                   styles.button,
@@ -541,12 +536,9 @@ const BottomSection = props => {
             </div>
           </div>
           <div {...stylex.props(styles.preScaleSection)}>
-            <div {...stylex.props(styles.preScaleSwitchWrapper)}>
-              <ConnectedPreScaleSwitch
-                position={2}
-                xstyle={styles.preScaleSwitch}
-              />
-            </div>
+            <MidiHint mark="preScale" text={HINT.preScale}>
+              <ConnectedPreScaleSwitch xstyle={styles.preScaleSwitch} />
+            </MidiHint>
             <div {...stylex.props(styles.preScaleBottomSection)}>
               <ArrowLabel
                 label="STEP NO"

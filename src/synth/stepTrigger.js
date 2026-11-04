@@ -35,6 +35,7 @@ import { getCurrentPart } from "selectors/common";
 
 // helpers
 import { stepKey, equalPower } from "helpers";
+import { drumNote, isMidiMode, playDrum } from "midi/out";
 
 const drumModuleMapping = [
   [BASS_DRUM, bassDrum],
@@ -92,7 +93,43 @@ function getAccentGain(
   return accentActive ? 1.0 : inactiveGainAmt;
 }
 
+function sendMidiNotes(storeState) {
+  const currentPattern = patternSelector(storeState);
+  const currentPart = getCurrentPart(storeState);
+  const currentVariation = variationSelector(storeState);
+  const currentStep = stepSelector(storeState);
+  const accentStep = stepKey(
+    currentPattern,
+    ACCENT,
+    currentPart,
+    currentVariation,
+    currentStep
+  );
+  const accent = !!storeState.steps[accentStep];
+
+  drumModuleMapping.forEach(([drumID]) => {
+    const stepID = stepKey(
+      currentPattern,
+      drumID,
+      currentPart,
+      currentVariation,
+      currentStep
+    );
+    if (!storeState.steps[stepID]) return;
+    const drumState = storeState.instrumentState[drumID];
+    const level = drumState.level || 0;
+    let velocity = Math.round((level / 100) * 110) + 1;
+    if (accent) velocity = Math.min(127, velocity + 24);
+    playDrum(drumNote(drumID, drumState.selector), velocity);
+  });
+}
+
 export default function(storeState, deadline, destination, clock, audioCtx) {
+  if (isMidiMode()) {
+    sendMidiNotes(storeState);
+    return;
+  }
+
   // select relevant values from the global state
   const currentPattern = patternSelector(storeState);
   const currentPart = getCurrentPart(storeState);

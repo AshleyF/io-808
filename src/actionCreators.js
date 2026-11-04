@@ -21,6 +21,7 @@ import {
   CLEAR_DRAG_ENTER,
   CLEAR_DRAG_EXIT,
   CLEAR_DRAG_DROP,
+  LENGTH_ARM_TOGGLE,
   STATE_LOAD,
   RESET
 } from "actionTypes";
@@ -119,6 +120,10 @@ export const onClearDragEnd = () => ({
 export const onClearDragDrop = length => ({
   type: CLEAR_DRAG_DROP,
   payload: length
+});
+
+export const onLengthArmToggle = () => ({
+  type: LENGTH_ARM_TOGGLE
 });
 
 export const onStateLoad = loadedState => ({

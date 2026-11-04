@@ -42,5 +42,6 @@ export const PERSISTANCE_FILTER = [
   "steps",
   "masterVolume",
   "tempo",
-  "fineTempo"
+  "fineTempo",
+  "preScalePosition"
 ];

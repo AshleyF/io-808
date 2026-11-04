@@ -30,6 +30,10 @@ function triggerSilentAudio(audioCtx) {
   }
 }
 
+export function isAudioRunning() {
+  return clock != null && audioCtx != null && audioCtx.state === "running";
+}
+
 export function requestAudioInit() {
   if (audioCtx != null && clock != null) {
     if (audioCtx.state === "suspended" && audioCtx.resume) {

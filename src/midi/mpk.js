@@ -4,12 +4,17 @@ import {
   onMasterVolumeChange,
   onTempoChange,
   onFineTempoChange,
+  onPreScaleChange,
   onBasicVariationChange,
+  onIFVariationChange,
   onAutoFillInChange,
   onModeChange,
   onStartStopButtonClick,
   onTapButtonClick,
-  onStepButtonClick
+  onStepButtonClick,
+  onClearDragDrop,
+  onClearDown,
+  onClearUp
 } from "actionCreators";
 import {
   MODE_PATTERN_CLEAR,
@@ -19,6 +24,8 @@ import {
 } from "store-constants";
 import stepButtonSelector from "selectors/stepButton";
 import { requestAudioInit } from "audioCtxContext";
+import { pulse } from "midi/highlight";
+import { noteMidiAccess } from "midi/out";
 import {
   INSTRUMENTS,
   NOTE_TO_STEP,
@@ -49,10 +56,11 @@ for (let step = 0; step < 16; step++) {
 const CC_MOD = 1;
 const CC_ENCODER_PRESS = 13;
 const CC_ENCODER = 14;
+const CC_SHIFT = 17;
 const CC_MINUS = 80;
 const CC_PLUS = 81;
 const CC_TAP = 82;
-const CC_LOOP = 74;
+const CC_RECORD = 77;
 const TRANSPORT_CC = { 76: true, 117: true, 118: true };
 
 let redux = null;
@@ -63,6 +71,8 @@ let sysexOk = false;
 let ownerFor = null;
 let connectTask = null;
 let lastScreen = "";
+let shiftDown = false;
+let lengthArmedAt = 0;
 let seenState = null;
 let statusLine = "";
 let painted = new Array(16);
@@ -190,6 +200,7 @@ function watchState(state) {
     master: state.masterVolume,
     tempo: state.tempo,
     fine: state.fineTempo,
+    preScale: state.preScalePosition,
     variation: state.basicVariationPosition,
     fill: state.autoFillInPosition,
     mode: state.selectedMode,
@@ -256,6 +267,9 @@ function describeChange(prev, next) {
   if (prev.master !== next.master) notes.push("Master " + screenNumber(next.master));
   if (prev.tempo !== next.tempo) notes.push("Tempo " + screenNumber(next.tempo));
   if (prev.fine !== next.fine) notes.push("Fine " + screenSigned(next.fine));
+  if (prev.preScale !== next.preScale) {
+    notes.push("Prescale " + ((next.preScale == null ? 2 : next.preScale) + 1));
+  }
   if (prev.variation !== next.variation) {
     notes.push(VARIATION_SCREEN[next.variation] || "Variation");
   }
@@ -364,6 +378,7 @@ function bindPorts() {
     resetHardwareCache();
   }
   publish(describe());
+  noteMidiAccess(access);
   if (redux) syncHardware(redux.getState());
 }
 
@@ -444,34 +459,73 @@ function rememberKnob(key, cc) {
 }
 
 function setRange(key, cc, current, min, max, step, apply) {
-  if (knobSent[key] === cc) return;
+  if (knobSent[key] === cc) return false;
   const parked = knobSent[key] != null;
   const dir = relativeDelta(cc);
   if (!parked && dir !== 0) {
     const next = Math.min(max, Math.max(min, current + dir * step));
     const rounded = Math.round(next * 1000) / 1000;
     if (!same(rounded, current)) apply(rounded);
-    return;
+    return true;
   }
-  if (knobSeen[key] === cc) return;
+  if (knobSeen[key] === cc) return false;
   rememberKnob(key, cc);
   const target = scale(cc, min, max, step);
   if (!same(target, current)) apply(target);
+  return true;
 }
 
-function setZone(key, cc, current, count, apply) {
-  if (knobSent[key] === cc) return;
+// A mode knob only has a few positions. Step once from wherever the page
+// already is, then put the encoder back on that position so the next click
+// starts there too.
+function nudgeZone(key, ccNumber, cc, current, count, apply) {
+  if (knobSent[key] === cc) return false;
+  const prev = knobSeen[key];
+  let step = relativeDelta(cc);
+  if (step === 0 && prev != null && cc !== prev) {
+    let delta = cc - prev;
+    if (delta > 64) delta -= 128;
+    if (delta < -64) delta += 128;
+    if (Math.abs(delta) > 8) {
+      const park = ccForZone(current, count);
+      rememberKnob(key, park);
+      send([0xb0, ccNumber, park]);
+      return false;
+    }
+    step = delta > 0 ? 1 : -1;
+  }
+  if (step === 0) {
+    if (prev == null) {
+      const park = ccForZone(current, count);
+      rememberKnob(key, park);
+      send([0xb0, ccNumber, park]);
+    }
+    return false;
+  }
+  const next = Math.max(0, Math.min(count - 1, current + step));
+  const park = ccForZone(next, count);
+  rememberKnob(key, park);
+  send([0xb0, ccNumber, park]);
+  if (next !== current) apply(next);
+  return next !== current;
+}
+
+function setZone(key, cc, current, count, apply, invert) {
+  if (knobSent[key] === cc) return false;
   const parked = knobSent[key] != null;
   const dir = relativeDelta(cc);
   if (!parked && dir !== 0) {
-    const next = Math.min(count - 1, Math.max(0, current + dir));
+    const step = invert ? -dir : dir;
+    const next = Math.min(count - 1, Math.max(0, current + step));
     if (next !== current) apply(next);
-    return;
+    return true;
   }
-  if (knobSeen[key] === cc) return;
+  if (knobSeen[key] === cc) return false;
   rememberKnob(key, cc);
-  const target = zone(cc, count);
+  let target = zone(cc, count);
+  if (invert) target = count - 1 - target;
   if (target !== current) apply(target);
+  return true;
 }
 
 function placeKnob(key, ccNumber, targetCc) {
@@ -500,16 +554,27 @@ function placeKnobs(state) {
     placeKnob("k3", 26, ccForValue(slot[inst.extra[1]], 0, 100, 2));
   }
   if (!valueParked("master", state.masterVolume, 0, 100, 1)) {
-    placeKnob("master", 27, ccForValue(state.masterVolume, 0, 100, 1));
+    placeKnob("master", 31, ccForValue(state.masterVolume, 0, 100, 1));
   }
   if (!valueParked("fine", state.fineTempo, -6.75, 6.75, 0.1)) {
-    placeKnob("fine", 28, ccForValue(state.fineTempo, -6.75, 6.75, 0.1));
+    placeKnob("fine", 29, ccForValue(state.fineTempo, -6.75, 6.75, 0.1));
   }
   if (!valueParked("mod", state.tempo, 30, 300, 6.75)) {
     placeKnob("mod", 1, ccForValue(state.tempo, 30, 300, 6.75));
   }
   if (knobSeen.fill == null || zone(knobSeen.fill, 6) !== state.autoFillInPosition) {
-    placeKnob("fill", 31, ccForZone(state.autoFillInPosition, 6));
+    placeKnob("fill", 28, ccForZone(state.autoFillInPosition, 6));
+  }
+  const scale = state.preScalePosition == null ? 2 : state.preScalePosition;
+  if (knobSeen.scale == null || 3 - zone(knobSeen.scale, 4) !== scale) {
+    placeKnob("scale", 30, ccForZone(3 - scale, 4));
+  }
+  const modeIndex = MODE_CYCLE.indexOf(state.selectedMode);
+  if (
+    modeIndex >= 0 &&
+    (knobSeen.mode == null || zone(knobSeen.mode, MODE_CYCLE.length) !== modeIndex)
+  ) {
+    placeKnob("mode", 27, ccForZone(modeIndex, MODE_CYCLE.length));
   }
 }
 
@@ -520,47 +585,95 @@ function selectedExtra(state, index) {
 function onKnob(state, cc, value) {
   const id = state.selectedInstrumentTrack;
   if (cc === 24) {
-    setRange(
-      "k1",
-      value,
-      state.instrumentState[id].level,
-      0,
-      100,
-      2,
-      next => redux.dispatch(onInstrumentChange(id, "level", next))
-    );
+    if (
+      setRange(
+        "k1",
+        value,
+        state.instrumentState[id].level,
+        0,
+        100,
+        2,
+        next => redux.dispatch(onInstrumentChange(id, "level", next))
+      )
+    ) {
+      pulse("level-" + id);
+    }
     return;
   }
   if (cc === 25 || cc === 26) {
     const control = selectedExtra(state, cc === 25 ? 0 : 1);
     if (!control) return;
-    setRange(
-      cc === 25 ? "k2" : "k3",
-      value,
-      state.instrumentState[id][control],
-      0,
-      100,
-      2,
-      next => redux.dispatch(onInstrumentChange(id, control, next))
-    );
+    if (
+      setRange(
+        cc === 25 ? "k2" : "k3",
+        value,
+        state.instrumentState[id][control],
+        0,
+        100,
+        2,
+        next => redux.dispatch(onInstrumentChange(id, control, next))
+      )
+    ) {
+      pulse(control + "-" + id);
+    }
     return;
   }
   if (cc === 27) {
-    setRange("master", value, state.masterVolume, 0, 100, 1, next =>
-      redux.dispatch(onMasterVolumeChange(next))
-    );
+    const found = MODE_CYCLE.indexOf(state.selectedMode);
+    const current = found < 0 ? 0 : found;
+    if (
+      nudgeZone("mode", 27, value, current, MODE_CYCLE.length, next =>
+        redux.dispatch(onModeChange(MODE_CYCLE[next]))
+      )
+    ) {
+      pulse("mode");
+    }
     return;
   }
   if (cc === 28) {
-    setRange("fine", value, state.fineTempo, -6.75, 6.75, 0.1, next =>
-      redux.dispatch(onFineTempoChange(next))
-    );
+    if (
+      setZone("fill", value, state.autoFillInPosition, 6, next =>
+        redux.dispatch(onAutoFillInChange(next))
+      )
+    ) {
+      pulse("autoFill");
+    }
+    return;
+  }
+  if (cc === 29) {
+    if (
+      setRange("fine", value, state.fineTempo, -6.75, 6.75, 0.1, next =>
+        redux.dispatch(onFineTempoChange(next))
+      )
+    ) {
+      pulse("fine");
+    }
+    return;
+  }
+  if (cc === 30) {
+    const current = state.preScalePosition == null ? 2 : state.preScalePosition;
+    if (
+      setZone(
+        "scale",
+        value,
+        current,
+        4,
+        next => redux.dispatch(onPreScaleChange(next)),
+        true
+      )
+    ) {
+      pulse("preScale");
+    }
     return;
   }
   if (cc === 31) {
-    setZone("fill", value, state.autoFillInPosition, 6, next =>
-      redux.dispatch(onAutoFillInChange(next))
-    );
+    if (
+      setRange("master", value, state.masterVolume, 0, 100, 1, next =>
+        redux.dispatch(onMasterVolumeChange(next))
+      )
+    ) {
+      pulse("master");
+    }
   }
 }
 
@@ -585,27 +698,30 @@ function nudgeInstrument(state, dir) {
   if (next < 0) next = count - 1;
   if (next >= count) next = 0;
   redux.dispatch(onInstrumentTrackChange(next));
+  pulse("instrument");
 }
 
 function onMinusPlus(state, plus) {
+  pulse("variation");
   const pos = state.basicVariationPosition;
   const next = plus ? Math.min(2, pos + 1) : Math.max(0, pos - 1);
   if (next !== pos) redux.dispatch(onBasicVariationChange(next));
+}
+
+function onIntroFill(state, plus) {
+  pulse("introFill");
+  const pos = state.introFillVariationPosition;
+  const next = plus ? Math.min(1, pos + 1) : Math.max(0, pos - 1);
+  if (next !== pos) redux.dispatch(onIFVariationChange(next));
 }
 
 function onEncoderPress(state) {
   const id = state.selectedInstrumentTrack;
   const inst = instrumentById(id);
   if (!inst.voices) return;
+  pulse("voice-" + id);
   const current = Number(state.instrumentState[id].selector) === 1 ? 1 : 0;
   redux.dispatch(onInstrumentChange(id, "selector", current === 0 ? 1 : 0));
-}
-
-function onLoop(state) {
-  let index = MODE_CYCLE.indexOf(state.selectedMode);
-  if (index < 0) index = 0;
-  else index = (index + 1) % MODE_CYCLE.length;
-  redux.dispatch(onModeChange(MODE_CYCLE[index]));
 }
 
 function press(name, portId, ch, cc, value) {
@@ -625,14 +741,19 @@ function press(name, portId, ch, cc, value) {
 
 function onTransportMessage(portId, ch, cc, value) {
   if (!press("transport", portId, ch, cc, value)) return;
+  pulse("start");
   requestAudioInit();
   redux.dispatch(onStartStopButtonClick());
 }
 
 function onModWheel(state, value) {
-  setRange("mod", value, state.tempo, 30, 300, 6.75, next =>
-    redux.dispatch(onTempoChange(next))
-  );
+  if (
+    setRange("mod", value, state.tempo, 30, 300, 6.75, next =>
+      redux.dispatch(onTempoChange(next))
+    )
+  ) {
+    pulse("tempo");
+  }
 }
 
 function onEncoder(state, value) {
@@ -657,9 +778,29 @@ function onCC(state, cc, value, ch, portId) {
     onEncoder(state, value);
     return;
   }
+  if (cc === CC_SHIFT) {
+    shiftDown = value > 0;
+    return;
+  }
+  if (cc === CC_RECORD) {
+    if (!press("record", portId, ch, cc, value)) return;
+    pulse("clear");
+    if (state.selectedMode === MODE_PATTERN_CLEAR) {
+      lengthArmedAt = 0;
+      redux.dispatch(onClearDown());
+      redux.dispatch(onClearUp());
+    } else if (
+      state.selectedMode === MODE_FIRST_PART ||
+      state.selectedMode === MODE_SECOND_PART
+    ) {
+      lengthArmedAt = performance.now();
+    }
+    return;
+  }
   if (cc === CC_MINUS || cc === CC_PLUS) {
     if (rising(cc === CC_PLUS ? "plus" : "minus", portId, ch, cc, value)) {
-      onMinusPlus(state, cc === CC_PLUS);
+      if (shiftDown) onIntroFill(state, cc === CC_PLUS);
+      else onMinusPlus(state, cc === CC_PLUS);
     }
     return;
   }
@@ -668,13 +809,10 @@ function onCC(state, cc, value, ch, portId) {
     return;
   }
   if (cc === CC_TAP) {
-    if (rising("tap", portId, ch, cc, value)) {
+    if (press("tap", portId, ch, cc, value)) {
+      pulse("tap");
       redux.dispatch(onTapButtonClick());
     }
-    return;
-  }
-  if (cc === CC_LOOP) {
-    if (press("loop", portId, ch, cc, value)) onLoop(state);
   }
 }
 
@@ -698,6 +836,18 @@ function onMidi(event) {
     if (step == null) return;
     if (now - stepAt[step] < 40) return;
     stepAt[step] = now;
+    const mode = redux.getState().selectedMode;
+    if (
+      lengthArmedAt &&
+      now - lengthArmedAt < 4000 &&
+      (mode === MODE_FIRST_PART || mode === MODE_SECOND_PART)
+    ) {
+      lengthArmedAt = 0;
+      pulse("clear");
+      redux.dispatch(onClearDragDrop(step + 1));
+      return;
+    }
+    pulse("step-" + step);
     redux.dispatch(onStepButtonClick(step));
     return;
   }

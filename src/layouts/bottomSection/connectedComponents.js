@@ -107,7 +107,9 @@ export const ConnectedTapButton = props => {
 };
 
 export const ConnectedPreScaleSwitch = props => {
-  const position = useSelector(() => 2);
+  const position = useSelector(state =>
+    state.preScalePosition == null ? 2 : state.preScalePosition
+  );
 
   const dispatch = useDispatch();
   const onChange = React.useCallback(

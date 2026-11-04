@@ -120,16 +120,19 @@ export const CONTROL_SHORT = {
 };
 
 export const HINT = {
-  instrument: "MPK center encoder · turn to select the instrument",
-  master: "MPK knob 4 · master volume",
+  instrument: "MPK encoder · instrument",
+  master: "MPK knob 8 · master",
   tempo: "MPK mod wheel · tempo",
-  fine: "MPK knob 5 · fine tempo",
-  variation: "MPK − and + · basic variation, A / AB / B",
-  autoFill: "MPK knob 8 · auto fill in",
-  start: "MPK Stop/Play · start and stop",
-  tap: "MPK Tap Tempo · TAP, arms the intro/fill in Manual Play",
-  introFill: "",
-  mode: "MPK Loop · Pattern Clear, 1st Part, 2nd Part, Manual Play"
+  fine: "MPK knob 6 · fine tempo",
+  variation: "MPK − and + · basic variation",
+  introFill: "MPK Shift and − / + · I/F variation",
+  preScale: "MPK knob 7 · pre-scale",
+  autoFill: "MPK knob 5 · auto fill",
+  start: "MPK Stop/Play",
+  tap: "MPK Tap · intro/fill",
+  mode: "MPK knob 4 · mode",
+  clear:
+    "MPK Record clears in Pattern Clear. Record, then a pad, sets the length."
 };
 
 // Knobs 1–8 are CC 24–31, the numbers Akai's MPK Mini 4 playground reads.
@@ -157,32 +160,33 @@ export const KNOBS = [
   {
     n: 4,
     cc: 27,
-    name: "Master volume",
-    detail: "Master volume."
+    name: "Mode",
+    detail: "Pattern Clear, 1st Part, 2nd Part, and Manual Play."
   },
   {
     n: 5,
     cc: 28,
-    name: "Fine tempo",
-    detail: "Fine tempo. The mod wheel is the main tempo."
+    name: "Auto fill in",
+    detail: "Manual, then every 16, 12, 8, 4, or 2 measures."
   },
   {
     n: 6,
     cc: 29,
-    name: "Unused",
-    detail: "Not assigned."
+    name: "Fine tempo",
+    detail: "Fine tempo. The mod wheel is the main tempo."
   },
   {
     n: 7,
     cc: 30,
-    name: "Unused",
-    detail: "Not assigned."
+    name: "Pre-scale",
+    detail:
+      "How many steps make one beat. 1 is 3 steps, 2 is 6, 3 is 4, and 4 is 8. 3 is the normal setting."
   },
   {
     n: 8,
     cc: 31,
-    name: "Auto fill in",
-    detail: "Manual, then every 16, 12, 8, 4, or 2 measures."
+    name: "Master volume",
+    detail: "Master volume."
   }
 ];
 
@@ -194,7 +198,8 @@ export const BUTTONS = [
   },
   {
     name: "− and +",
-    detail: "Step Basic Variation toward A or toward B."
+    detail:
+      "Step Basic Variation toward A or toward B. Hold Shift for I/F Variation, A or B."
   },
   {
     name: "Mod wheel",
@@ -210,9 +215,9 @@ export const BUTTONS = [
       "Same as TAP. In Manual Play that arms the intro/fill, the way the button on the panel does."
   },
   {
-    name: "Loop",
+    name: "Record",
     detail:
-      "Steps the mode knob through Pattern Clear, 1st Part, 2nd Part, and Manual Play."
+      "The round button beside Stop/Play. In Pattern Clear it clears the selected pattern. In 1st Part or 2nd Part, press it and then a pad to set that step as the last step."
   }
 ];
 
@@ -300,44 +305,17 @@ export function knobIndexFor(id, controlName) {
 export function instrumentKnobHint(id, controlName) {
   const knob = knobIndexFor(id, controlName);
   if (!knob) return "";
-  const inst = instrumentById(id);
-  return (
-    "MPK knob " +
-    knob +
-    " · " +
-    CONTROL_LABELS[controlName] +
-    " while " +
-    inst.name +
-    " is selected"
-  );
+  return "MPK knob " + knob + " · " + CONTROL_LABELS[controlName];
 }
 
 export function voiceHint(id) {
   const inst = instrumentById(id);
   if (!inst.voices) return "";
-  return (
-    "Press the MPK center encoder to switch between " +
-    inst.voices[0] +
-    " and " +
-    inst.voices[1] +
-    "."
-  );
+  return "MPK encoder press · " + inst.voices[0] + " / " + inst.voices[1];
 }
 
 export function stepHint(step) {
-  const pad = STEPS[step];
-  return (
-    "MPK pad · bank " +
-    pad.bank +
-    ", " +
-    pad.row +
-    " row, " +
-    pad.column +
-    " · " +
-    pad.label +
-    " group, step " +
-    (step + 1)
-  );
+  return "MPK pad · step " + (step + 1) + ". Record, then this pad, sets the length.";
 }
 
 export function dimRgb(rgb) {

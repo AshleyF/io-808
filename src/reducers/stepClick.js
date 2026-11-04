@@ -6,10 +6,11 @@ import {
   MODE_SECOND_PART,
   MODE_MANUAL_PLAY,
   MODE_TO_PART_MAPPING,
-  FIRST_PART
+  FIRST_PART,
+  SECOND_PART
 } from "store-constants";
 
-import { stepKey } from "../helpers";
+import { stepKey, patternLengthKey } from "../helpers";
 
 import basicVariationSelector from "selectors/variation";
 
@@ -24,6 +25,23 @@ export default (state, stepNumber) => {
   } = state;
 
   const currentVariation = basicVariationSelector(state);
+
+  if (
+    state.lengthArmed &&
+    (selectedMode === MODE_FIRST_PART || selectedMode === MODE_SECOND_PART)
+  ) {
+    const length = stepNumber + 1;
+    const track = state.currentPattern;
+    return produce(state, draft => {
+      draft.lengthArmed = false;
+      if (selectedMode === MODE_FIRST_PART) {
+        draft.patternLengths[patternLengthKey(track, FIRST_PART)] = length;
+        draft.patternLengths[patternLengthKey(track, SECOND_PART)] = 0;
+      } else {
+        draft.patternLengths[patternLengthKey(track, SECOND_PART)] = length;
+      }
+    });
+  }
 
   if (playing) {
     switch (selectedMode) {

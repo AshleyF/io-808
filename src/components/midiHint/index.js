@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import * as stylex from "@stylexjs/stylex";
 
 import { tokens } from "theme/variables.stylex";
+import { useGlow } from "midi/highlight";
 
 const styles = stylex.create({
   anchor: {
@@ -34,11 +35,17 @@ const styles = stylex.create({
     textAlign: "left",
     pointerEvents: "none",
     boxShadow: "0 8px 24px rgba(0,0,0,0.35)"
+  },
+  glow: {
+    borderRadius: 8,
+    boxShadow:
+      "0 0 14px 3px rgba(255, 120, 40, 0.45), 0 0 32px 10px rgba(255, 90, 0, 0.28)"
   }
 });
 
 const MidiHint = props => {
-  const { text, children } = props;
+  const { text, mark, children } = props;
+  const lit = useGlow(mark);
   const [tip, setTip] = React.useState(null);
   const timer = React.useRef(null);
 
@@ -72,7 +79,7 @@ const MidiHint = props => {
     [text]
   );
 
-  if (!text) return children;
+  if (!text && !mark) return children;
 
   const placed = tip
     ? {
@@ -86,7 +93,7 @@ const MidiHint = props => {
 
   return (
     <div
-      {...stylex.props(styles.anchor)}
+      {...stylex.props(styles.anchor, lit ? styles.glow : null)}
       onMouseEnter={onEnter}
       onMouseLeave={clear}
       onMouseDown={clear}

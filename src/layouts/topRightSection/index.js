@@ -257,7 +257,7 @@ function TopRightSection(props) {
       <div {...stylex.props(styles.titleWrapper)}>
         <AppTitle xstyle={styles.appTitle} />
         <div {...stylex.props(styles.masterVolumeWrapper)}>
-          <MidiHint text={HINT.master}>
+          <MidiHint mark="master" text={HINT.master}>
             <ConnectedMasterVolumeKnob xstyle={styles.masterVolumeKnob} />
           </MidiHint>
         </div>

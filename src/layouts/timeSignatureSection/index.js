@@ -1,5 +1,8 @@
 import * as React from "react";
+import { useDispatch, useSelector } from "react-redux";
 import * as stylex from "@stylexjs/stylex";
+
+import { onPreScaleChange } from "actionCreators";
 
 import { tokens } from "theme/variables.stylex";
 
@@ -92,6 +95,12 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "row",
     overflow: "hidden"
+  },
+  quiet: {
+    opacity: 0.35
+  },
+  pick: {
+    cursor: "pointer"
   }
 });
 
@@ -189,6 +198,14 @@ function HalfStep() {
 
 function TimeSignatureSection(props) {
   const { xstyle } = props;
+  const position = useSelector(state =>
+    state.preScalePosition == null ? 2 : state.preScalePosition
+  );
+  const dispatch = useDispatch();
+  const choose = React.useCallback(
+    next => dispatch(onPreScaleChange(next)),
+    [dispatch]
+  );
   const rowHeight = 27.5;
   const trippletStepWidth = 331.625;
   const sixthStepWidth = 160.8125;
@@ -216,7 +233,10 @@ function TimeSignatureSection(props) {
   return (
     <TimeSigSectionContext.Provider value={contextValue}>
       <div {...stylex.props(styles.wrapper, xstyle)}>
-        <div {...stylex.props(styles.row)}>
+        <div
+          {...stylex.props(styles.row, styles.pick, position === 0 ? null : styles.quiet)}
+          onClick={() => choose(0)}
+        >
           <SixthStep />
           <SixthStep />
           <SixthStep />
@@ -225,19 +245,28 @@ function TimeSignatureSection(props) {
           <SixthStep />
           <LinePadding />
         </div>
-        <div {...stylex.props(styles.row)}>
+        <div
+          {...stylex.props(styles.row, styles.pick, position === 1 ? null : styles.quiet)}
+          onClick={() => choose(1)}
+        >
           <TrippletStep />
           <TrippletStep />
           <TrippletStep />
           <LinePadding />
         </div>
-        <div {...stylex.props(styles.row)}>
+        <div
+          {...stylex.props(styles.row, styles.pick, position === 2 ? null : styles.quiet)}
+          onClick={() => choose(2)}
+        >
           <QuarterStep />
           <QuarterStep />
           <QuarterStep />
           <QuarterStep />
         </div>
-        <div {...stylex.props(styles.row)}>
+        <div
+          {...stylex.props(styles.row, styles.pick, position === 3 ? null : styles.quiet)}
+          onClick={() => choose(3)}
+        >
           <HalfStep />
           <HalfStep />
         </div>

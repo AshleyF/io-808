@@ -32,6 +32,11 @@ const styles = stylex.create({
   draggable: {
     cursor: "move"
   },
+  armed: {
+    cursor: "pointer",
+    transform: "scale(0.92) translateZ(0)",
+    boxShadow: "0 0 0 3px rgba(208, 57, 51, 0.55)"
+  },
   interactive: {
     ":hover": {
       transform: "scale(1.08) translateZ(0)"
@@ -53,6 +58,7 @@ const ClearButton = props => {
     onMouseDown = noOp,
     onMouseUp = noOp,
     draggable = false,
+    armed = false,
     onDragEnd = noOp,
     onDragStart = noOp
   } = props;
@@ -71,7 +77,11 @@ const ClearButton = props => {
       <div {...stylex.props(styles.wrapper)}>
         <div
           ref={ref}
-          {...stylex.props(styles.clearButton, styles.draggable)}
+          {...stylex.props(
+            styles.clearButton,
+            styles.draggable,
+            armed && styles.armed
+          )}
           draggable={true}
           onDragEnd={onDragEnd}
           onDragStart={onDragStart}
@@ -83,7 +93,9 @@ const ClearButton = props => {
             styles.visible
           )}
         >
-          Drag to a Step Button to set Pattern Length
+          {armed
+            ? "Click the last step"
+            : "Drag to a step, or click, then the step"}
         </div>
       </div>
     );

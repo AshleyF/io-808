@@ -9,7 +9,8 @@ import {
   onClearDown,
   onClearUp,
   onClearDragStart,
-  onClearDragEnd
+  onClearDragEnd,
+  onLengthArmToggle
 } from "actionCreators";
 
 import { MODE_FIRST_PART, MODE_SECOND_PART } from "store-constants";
@@ -25,15 +26,23 @@ export const ConnectedClearButton = props => {
   const draggable = useSelector(state =>
     [MODE_FIRST_PART, MODE_SECOND_PART].includes(state.selectedMode)
   );
+  const armed = useSelector(state => state.lengthArmed);
 
   const dispatch = useDispatch();
-  const onMouseDown = React.useCallback(() => dispatch(onClearDown()), [
-    dispatch
-  ]);
-  const onMouseUp = React.useCallback(() => dispatch(onClearUp()), [dispatch]);
-  const onDragStart = React.useCallback(() => dispatch(onClearDragStart()), [
-    dispatch
-  ]);
+  const dragged = React.useRef(false);
+  const onMouseDown = React.useCallback(() => {
+    dragged.current = false;
+    dispatch(onClearDown());
+  }, [dispatch]);
+  const onMouseUp = React.useCallback(() => {
+    dispatch(onClearUp());
+    if (draggable && !dragged.current) dispatch(onLengthArmToggle());
+    dragged.current = false;
+  }, [dispatch, draggable]);
+  const onDragStart = React.useCallback(() => {
+    dragged.current = true;
+    dispatch(onClearDragStart());
+  }, [dispatch]);
   const onDragEnd = React.useCallback(() => dispatch(onClearDragEnd()), [
     dispatch
   ]);
@@ -42,6 +51,7 @@ export const ConnectedClearButton = props => {
     <ClearButton
       {...props}
       draggable={draggable}
+      armed={armed}
       onMouseDown={onMouseDown}
       onMouseUp={onMouseUp}
       onDragStart={onDragStart}

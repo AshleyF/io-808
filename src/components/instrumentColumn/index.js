@@ -74,7 +74,7 @@ const InstrumentColumn = props => {
     if (switchConfig != null) {
       const { name, values } = switchConfig;
       labelComponents.push(
-        <MidiHint key={`${type}-switch`} text={voiceHint(type)}>
+        <MidiHint key={`${type}-switch`} mark={`voice-${type}`} text={voiceHint(type)}>
           <ConnectedDrumSwitch
             name={name}
             type={type}
@@ -95,6 +95,7 @@ const InstrumentColumn = props => {
   controlComponents.push(
     <MidiHint
       key={`${type}-knob-level`}
+      mark={`level-${type}`}
       text={instrumentKnobHint(type, "level")}
     >
       <ConnectedDrumKnob
@@ -112,6 +113,7 @@ const InstrumentColumn = props => {
       controlComponents.push(
         <MidiHint
           key={`${type}-knob-${index}`}
+          mark={`${controlName}-${type}`}
           text={instrumentKnobHint(type, controlName)}
         >
           <ConnectedDrumKnob

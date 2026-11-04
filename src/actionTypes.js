@@ -22,6 +22,7 @@ export const CLEAR_DRAG_END = "CLEAR_DRAG_END";
 export const CLEAR_DRAG_ENTER = "CLEAR_DRAG_ENTER";
 export const CLEAR_DRAG_EXIT = "CLEAR_DRAG_EXIT";
 export const CLEAR_DRAG_DROP = "CLEAR_DRAG_DROP";
+export const LENGTH_ARM_TOGGLE = "LENGTH_ARM_TOGGLE";
 
 export const STATE_LOAD = "STATE_LOAD";
 export const RESET = "RESET";

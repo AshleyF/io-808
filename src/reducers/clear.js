@@ -73,7 +73,10 @@ export default (state, type) => {
           });
         }
         default: {
-          return state;
+          if (!state.clearPressed) return state;
+          return produce(state, draft => {
+            draft.clearPressed = false;
+          });
         }
       }
     }
@@ -81,6 +84,7 @@ export default (state, type) => {
     case CLEAR_DRAG_START: {
       return produce(state, draft => {
         draft.clearDragging = true;
+        draft.lengthArmed = false;
         draft.pendingPatternLength = pendingPatternLengthSelector(state);
       });
     }

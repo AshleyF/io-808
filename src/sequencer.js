@@ -11,6 +11,16 @@ import AudioCtxContext, { subscribeAudioReady } from "audioCtxContext";
 
 import { equalPower } from "helpers";
 
+// Steps in one beat for pre-scale 1–4. 3 is the normal quarter-note setting.
+const STEPS_PER_BEAT = [3, 6, 4, 8];
+
+function stepInterval(state) {
+  const bpm = state.tempo + state.fineTempo;
+  const steps = STEPS_PER_BEAT[state.preScalePosition];
+  const divisions = steps == null ? 4 : steps;
+  return 60 / bpm / divisions;
+}
+
 function getAudio(getClock, getAudioCtx) {
   const clock = getClock();
   const audioCtx = getAudioCtx();
@@ -52,7 +62,7 @@ const Sequencer = React.memo(() => {
   const tickEventRef = React.useRef(null);
   const masterVolumeRef = React.useRef(storeState.masterVolume);
   const outputChainRef = React.useRef(null);
-  const currentTempoRef = React.useRef(null);
+  const stepIntervalRef = React.useRef(null);
 
   // Latest Store Tracking
   const latestStoreRef = React.useRef(storeState);
@@ -132,16 +142,15 @@ const Sequencer = React.memo(() => {
       if (audio != null && storeState.playing && tickEvent === null) {
         audio.clock.start();
 
-        const currentTempo = storeState.tempo + storeState.fineTempo;
-        const beatDuration = 60 / currentTempo / 4;
+        const interval = stepInterval(storeState);
 
         const newTickEvent = audio.clock
           .callbackAtTime(handleTick, audio.ctx.currentTime + 0.1)
-          .repeat(beatDuration)
+          .repeat(interval)
           .tolerance({ late: 0.01 });
 
         tickEventRef.current = newTickEvent;
-        currentTempoRef.current = currentTempo;
+        stepIntervalRef.current = interval;
       }
     },
     [
@@ -165,7 +174,7 @@ const Sequencer = React.memo(() => {
         audio.clock.stop();
 
         tickEventRef.current = null;
-        currentTempoRef.current = null;
+        stepIntervalRef.current = null;
       }
     },
     [getAudioContext, getClock, storeState.playing]
@@ -174,26 +183,28 @@ const Sequencer = React.memo(() => {
   // change tempo
   React.useEffect(
     () => {
-      const currentTempo = currentTempoRef.current;
+      const previousInterval = stepIntervalRef.current;
       const tickEvent = tickEventRef.current;
       const prevStoreState = previousStoreStateRef.current;
       const audio = getAudio(getClock, getAudioContext);
 
-      const tempoHasChanged =
+      const clockHasChanged =
         storeState.tempo !== prevStoreState.tempo ||
-        storeState.fineTempo !== prevStoreState.fineTempo;
+        storeState.fineTempo !== prevStoreState.fineTempo ||
+        storeState.preScalePosition !== prevStoreState.preScalePosition;
 
-      if (storeState.playing && tempoHasChanged) {
-        const newTempo = storeState.tempo + storeState.fineTempo;
+      if (storeState.playing && clockHasChanged && previousInterval != null) {
+        const nextInterval = stepInterval(storeState);
 
         audio != null &&
+          tickEvent != null &&
           audio.clock.timeStretch(
             audio.ctx.currentTime,
             [tickEvent],
-            currentTempo / newTempo
+            nextInterval / previousInterval
           );
 
-        currentTempoRef.current = newTempo;
+        stepIntervalRef.current = nextInterval;
       }
     },
     [
@@ -201,6 +212,7 @@ const Sequencer = React.memo(() => {
       getClock,
       storeState.fineTempo,
       storeState.playing,
+      storeState.preScalePosition,
       storeState.tempo
     ]
   );

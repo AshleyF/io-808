@@ -23,6 +23,8 @@ import {
   MpkHelpLink,
   MpkStatusButton
 } from "components/mpkPanel";
+import SoundModeButton from "components/soundMode";
+import AudioUnlock from "components/audioUnlock";
 
 const GithubLink = () => {
   return (
@@ -250,6 +252,7 @@ const AppLayout = React.memo(
               , with MPK support added.
             </div>
             <div {...stylex.props(styles.headerTools)}>
+              <SoundModeButton />
               <MpkStatusButton />
               <GithubLink />
             </div>
@@ -328,6 +331,7 @@ const AppLayout = React.memo(
           </div>
         </div>
         <MpkHelpDialog />
+        <AudioUnlock />
       </div>
     );
   },

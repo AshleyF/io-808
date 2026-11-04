@@ -132,6 +132,7 @@ export default {
 
   tempo: 135,
   fineTempo: 0,
+  preScalePosition: 2,
 
   currentStep: 0,
 
@@ -139,6 +140,7 @@ export default {
 
   clearPressed: false,
   clearDragging: false,
+  lengthArmed: false,
 
   pendingPatternLength: 0,
 };

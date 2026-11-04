@@ -387,6 +387,11 @@ export const MpkHelpDialog = () => {
           Eight knobs, left to right. The top row is 1–4 and the bottom row is
           5–8. Knob 1 is the level of the selected instrument. The mod wheel
           is tempo. Connecting moves the knobs to the values already on screen.
+          A control glows on the page while the keyboard is moving it. The
+          MIDI menu in the header stays on Audio only (no MIDI) until an
+          output is chosen. The page asks for MIDI access when it loads so it
+          can connect the keyboard. An output sends General MIDI notes on
+          channel 10 and keeps the page quiet.
         </p>
         <Rows rows={knobRows} />
 
@@ -398,8 +403,10 @@ export const MpkHelpDialog = () => {
           Bank A is steps 1–8 and bank B is steps 9–16. The top row is the
           first four of that bank. Pads stay dim in their group color and light
           up in that same color with the step lamps, including the playhead.
-          Press a pad to toggle that step. Leave Note Repeat off, or a held pad
-          will keep flipping.
+          Press a pad to toggle that step. In 1st Part or 2nd Part, press Record
+          and then a pad to set the pattern length to that step. In Pattern
+          Clear, Record clears the selected pattern. Leave Note Repeat off, or
+          a held pad will keep flipping.
         </p>
         <div {...stylex.props(styles.banks)}>
           <PadBank bank="A" />

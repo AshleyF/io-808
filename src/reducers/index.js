@@ -7,6 +7,7 @@ import {
   IF_VARIATION_CHANGE,
   AUTO_FILL_IN_CHANGE,
   FINE_TEMPO_CHANGE,
+  PRE_SCALE_CHANGE,
   INSTRUMENT_TRACK_CHANGE,
   MODE_CHANGE,
   TEMPO_CHANGE,
@@ -22,6 +23,7 @@ import {
   CLEAR_DRAG_ENTER,
   CLEAR_DRAG_EXIT,
   CLEAR_DRAG_DROP,
+  LENGTH_ARM_TOGGLE,
   STATE_LOAD,
   RESET
 } from "actionTypes";
@@ -203,6 +205,12 @@ export default function(state, { type, payload }) {
       });
     }
 
+    case PRE_SCALE_CHANGE: {
+      return produce(state, draft => {
+        draft.preScalePosition = payload;
+      });
+    }
+
     case AUTO_FILL_IN_CHANGE: {
       return produce(state, draft => {
         draft.autoFillInPosition = payload;
@@ -219,6 +227,7 @@ export default function(state, { type, payload }) {
       return produce(state, draft => {
         draft.selectedMode = payload;
         draft.playing = false;
+        draft.lengthArmed = false;
       });
     }
 
@@ -326,17 +335,27 @@ export default function(state, { type, payload }) {
       }
     }
 
+    case LENGTH_ARM_TOGGLE: {
+      const part = MODE_TO_PART_MAPPING[state.selectedMode];
+      if (part == null) return state;
+      return produce(state, draft => {
+        draft.lengthArmed = !state.lengthArmed;
+      });
+    }
+
     case CLEAR_DRAG_DROP: {
       const track = state.currentPattern;
       const part = MODE_TO_PART_MAPPING[state.selectedMode];
 
       if (part === FIRST_PART) {
         return produce(state, draft => {
+          draft.lengthArmed = false;
           draft.patternLengths[patternLengthKey(track, FIRST_PART)] = payload;
           draft.patternLengths[patternLengthKey(track, SECOND_PART)] = 0;
         });
       } else if (part === SECOND_PART) {
         return produce(state, draft => {
+          draft.lengthArmed = false;
           draft.patternLengths[patternLengthKey(track, SECOND_PART)] = payload;
         });
       } else {
@@ -359,6 +378,7 @@ export default function(state, { type, payload }) {
     case STATE_LOAD: {
       return produce(state, draft => {
         PERSISTANCE_FILTER.forEach(key => {
+          if (payload[key] == null) return;
           draft[key] = payload[key];
         });
       });
