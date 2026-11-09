@@ -20,27 +20,22 @@ This library really has fueled my love of programming user interfaces and is wha
  
 ### redux
 
-Used for state management and used in conjuction with `redux-localstorage` for state persistance and `react-redux` for connecting my React components to the Redux store.
+Used for state management, with `redux-persist` keeping the patterns, rhythm tracks, and related settings in the browser, and `react-redux` connecting the React components to the store.
 
-### seamless-immutable
+### immer
 
-Used as the primary data structure for the redux store. The state store in this application is quite large (seriously, there are over 12,000 steps to keep track of) so in order to ensure maximum performance for mutating the state, this library was crucial (and a whole lot smaller than ImmutableJS).
+Used for updating the Redux state. The store tracks every step of every pattern, so those updates need to stay cheap.
  
 ### reselect
 
-Used for efficiently computing values from the Redux store. A lot of the UI state depends on the state of over components so this library was a lifesaver in helping with the reasoning and performance of those dependencies.
+Used for efficiently computing values from the Redux store. A lot of the UI state depends on the state of other components, so this library helps with the reasoning and performance of those dependencies.
  
-### radium
+### stylex
 
-Used for styling of all React components. All of the styles in the webapp are done through inline styles and in the few places I needed something like a `:hover` selector, Radium provided it. Also doesn't hurt that it autoprefixes all of the inline styles.
+Used for styling. Styles live next to the components, including the few places that need something like a `:hover` selector.
 
-## Features Not Yet Implemented
+## Playing the 808
 
-In order to meet my personal deadline of 8/08 for my initial release I had to skip a few of the features of the original 808.
+`PLAY` and `COMPOSE` store 12 rhythm tracks, 64 bars each. `PRE-SCALE` sets how many steps are in a beat: 3, 6, 4, or 8. While a pattern is running in `1st PART` or `2nd PART`, `TAP` adds a trigger for the selected instrument on the nearest step. In `MANUAL PLAY` and `COMPOSE`, `TAP` schedules the intro/fill.
 
-- `PLAY` mode
-- `COMPOSE` mode
-- `PRE-SCALE` (every pattern is currently hardcoded to `3`)
-- Adding triggers via the `TAP` button
-
-I'll be continuously working on these features as well as improving the synthesis of each sound to greater match the sounds of the original hardware.
+A MIDI controller can drive the panel. The default mapping is an MPK Mini 4, and the settings page can remap the knobs, pads, and buttons. Sound can stay in the browser or go out over MIDI.

@@ -7,7 +7,11 @@ import { onTick, onBlinkTick } from "actionCreators";
 import Limiter from "synth/effects/limiter";
 import VCA from "synth/basics/vca";
 import stepTrigger from "synth/stepTrigger";
-import AudioCtxContext, { subscribeAudioReady } from "audioCtxContext";
+import { clearStepWindow, recordStepWindow } from "stepClock";
+import AudioCtxContext, {
+  subscribeAudioReady,
+  subscribeAudioReset
+} from "audioCtxContext";
 
 import { equalPower } from "helpers";
 
@@ -63,6 +67,23 @@ const Sequencer = React.memo(() => {
   const masterVolumeRef = React.useRef(storeState.masterVolume);
   const outputChainRef = React.useRef(null);
   const stepIntervalRef = React.useRef(null);
+  React.useEffect(
+    () =>
+      subscribeAudioReset(() => {
+        if (tickEventRef.current) {
+          try {
+            tickEventRef.current.clear();
+          } catch (error) {
+            // The clock may already be gone.
+          }
+          tickEventRef.current = null;
+        }
+        stepIntervalRef.current = null;
+        outputChainRef.current = null;
+        clearStepWindow();
+      }),
+    []
+  );
 
   // Latest Store Tracking
   const latestStoreRef = React.useRef(storeState);
@@ -105,6 +126,9 @@ const Sequencer = React.memo(() => {
 
         outputChainRef.current = currentOutputChain;
       }
+
+      const sounding = storeState.currentStep < 0 ? 0 : storeState.currentStep;
+      recordStepWindow(sounding, deadline, stepInterval(storeState));
 
       stepTrigger(
         storeState,
@@ -172,6 +196,7 @@ const Sequencer = React.memo(() => {
       if (audio != null && !storeState.playing && tickEvent !== null) {
         tickEvent.clear();
         audio.clock.stop();
+        clearStepWindow();
 
         tickEventRef.current = null;
         stepIntervalRef.current = null;

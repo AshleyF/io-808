@@ -6,6 +6,34 @@ let audioCtx = undefined;
 let clock = undefined;
 let pendingInit = null;
 const audioReadyListeners = [];
+const audioResetListeners = [];
+
+export function subscribeAudioReset(listener) {
+  audioResetListeners.push(listener);
+  return () => {
+    const index = audioResetListeners.indexOf(listener);
+    if (index >= 0) audioResetListeners.splice(index, 1);
+  };
+}
+
+export function resetAudio() {
+  const listeners = audioResetListeners.slice();
+  listeners.forEach(listener => listener());
+  if (clock) {
+    try {
+      clock.stop();
+    } catch (error) {
+      // The clock may already be stopped.
+    }
+  }
+  clock = undefined;
+  pendingInit = null;
+  if (audioCtx) {
+    const ctx = audioCtx;
+    audioCtx = undefined;
+    if (ctx.close) ctx.close();
+  }
+}
 
 export function subscribeAudioReady(listener) {
   audioReadyListeners.push(listener);
@@ -32,6 +60,10 @@ function triggerSilentAudio(audioCtx) {
 
 export function isAudioRunning() {
   return clock != null && audioCtx != null && audioCtx.state === "running";
+}
+
+export function currentAudioContext() {
+  return audioCtx;
 }
 
 export function requestAudioInit() {

@@ -29,7 +29,7 @@ function emptyRhythmTracks() {
 const PARTS = [FIRST_PART, SECOND_PART];
 const VARIATIONS = [A_VARIATION, B_VARIATION];
 
-const initialStepsState = (() => {
+export function createSteps() {
   const steps = {};
   for (let track = 0; track < 16; track++) {
     for (let instrument = 0; instrument < 12; instrument++) {
@@ -44,7 +44,7 @@ const initialStepsState = (() => {
     }
   }
   return steps;
-})();
+}
 
 const initialRhythmLengthState = (() => {
   const lengths = {};
@@ -109,11 +109,27 @@ const initialInstrumentState = {
   },
 };
 
-export default {
+const STEP_KEY = /^PATTERN_(\d+)-INSTRUMENT_(\d+)-(FIRST_PART|SECOND_PART)-(A_VARIATION|B_VARIATION)-STEP_(\d+)$/;
+
+export function sanitizeSteps(steps) {
+  const clean = {};
+  if (!steps || typeof steps !== "object") return clean;
+  Object.keys(steps).forEach(key => {
+    const match = STEP_KEY.exec(key);
+    if (!match) return;
+    if (Number(match[1]) > 15 || Number(match[2]) > 11 || Number(match[5]) > 15) {
+      return;
+    }
+    if (steps[key] === true) clean[key] = true;
+  });
+  return clean;
+}
+
+const initialState = {
   instrumentState: initialInstrumentState,
   patternLengths: initialRhythmLengthState,
 
-  steps: initialStepsState,
+  steps: createSteps(),
 
   currentPart: FIRST_PART,
   currentVariation: A_VARIATION,
@@ -152,3 +168,15 @@ export default {
 
   pendingPatternLength: 0,
 };
+
+// Captured before anything can write into the live state objects.
+const initialSnapshot = JSON.parse(JSON.stringify(initialState));
+
+export function cloneInitialState() {
+  const next = JSON.parse(JSON.stringify(initialSnapshot));
+  next.steps = createSteps();
+  next.rhythmTracks = emptyRhythmTracks();
+  return next;
+}
+
+export default initialState;

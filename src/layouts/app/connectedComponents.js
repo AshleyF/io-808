@@ -4,6 +4,9 @@ import * as stylex from "@stylexjs/stylex";
 
 // Action Creators
 import { onStateLoad, onReset } from "actionCreators";
+import { hardReset } from "store";
+import { resetAudio } from "audioCtxContext";
+import { silenceVoices } from "synth/stepTrigger";
 
 // Components
 import SaveButton from "components/saveButton";
@@ -48,12 +51,13 @@ export const ConnectedLoadButton = props => {
 };
 
 export const ConnectedResetButton = props => {
-  const disabled = useSelector(state => state.playing);
-
   const dispatch = useDispatch();
   const onClick = React.useCallback(() => {
     if (confirm("Are you sure you want to reset your sequencer?")) {
       dispatch(onReset());
+      silenceVoices();
+      resetAudio();
+      hardReset();
     }
   }, [dispatch]);
 
@@ -67,7 +71,6 @@ export const ConnectedResetButton = props => {
         props.xstyle
       ]}
       onClick={onClick}
-      disabled={disabled}
     >
       Reset
     </Button>

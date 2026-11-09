@@ -45,7 +45,8 @@ import {
   PERSISTANCE_FILTER
 } from "store-constants";
 
-import initialState from "initialState";
+import { cloneInitialState } from "initialState";
+import { quantizedStep } from "stepClock";
 
 // sub-reducers
 import stepClickReducer from "reducers/stepClick";
@@ -55,7 +56,8 @@ import clearReducer from "reducers/clear";
 import patternLengthSelector from "selectors/patternLength";
 import pendingPatternLengthSelector from "selectors/pendingPatternLength";
 
-import { patternLengthKey } from "helpers";
+import { patternLengthKey, stepKey } from "helpers";
+import basicVariationSelector from "selectors/variation";
 
 function getNextVariation(currentVariation, basicVariationPosition) {
   switch (basicVariationPosition) {
@@ -419,6 +421,28 @@ export default function(state, { type, payload }) {
             draft.fillScheduled = !state.fillScheduled;
           });
         }
+        case MODE_FIRST_PART:
+        case MODE_SECOND_PART: {
+          if (!state.playing) return state;
+          const length = patternLengthSelector(state);
+          if (!(length > 0)) return state;
+          const step = quantizedStep(state.currentStep, length);
+          const part = MODE_TO_PART_MAPPING[state.selectedMode];
+          const variation = basicVariationSelector(state);
+          if (part == null || variation == null) return state;
+          if (!isFinite(step) || step < 0 || step > 15) return state;
+          const key = stepKey(
+            state.currentPattern,
+            state.selectedInstrumentTrack,
+            part,
+            variation,
+            step
+          );
+          if (state.steps[key]) return state;
+          return produce(state, draft => {
+            draft.steps[key] = true;
+          });
+        }
         default: {
           return state;
         }
@@ -475,9 +499,7 @@ export default function(state, { type, payload }) {
     }
 
     case RESET: {
-      return produce(state, () => {
-        return initialState;
-      });
+      return cloneInitialState();
     }
 
     default: {

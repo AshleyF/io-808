@@ -129,7 +129,7 @@ export const HINT = {
   preScale: "Knob 7 · pre-scale",
   autoFill: "Knob 5 · auto fill",
   start: "Start/Stop",
-  tap: "Tap · intro/fill",
+  tap: "Tap · nearest step, or intro/fill",
   mode: "Knob 4 · mode",
   clear:
     "Record clears in Pattern Clear. Record, then a pad, sets the length."
@@ -216,7 +216,7 @@ export const BUTTONS = [
   {
     name: "Tap",
     detail:
-      "Same as TAP. In Manual Play and Compose that arms the intro/fill."
+      "In 1st Part or 2nd Part, while the pattern is running, this adds a trigger for the selected instrument on the nearest step. In Manual Play and Compose it arms the intro/fill."
   },
   {
     name: "Record",
