@@ -46,7 +46,7 @@ Each drum sound also has timbral properties that can be adjusted in real time wi
 
 Now try adding triggers for all the other available drum sounds until you have a fully-composed 16 step pattern!
 
-While the pattern is playing, `TAP` adds a trigger for the selected instrument on the nearest step. That step lights with the others. Press the step button to turn it off. This works in `1st PART` and `2nd PART`.
+While the pattern is playing, `TAP` adds a trigger for the selected instrument on the nearest step. That step lights with the others. Press the step button to turn it off. This works in `1st PART` and `2nd PART`. On a MIDI controller, Tap does the same thing.
 
 #### Note: The Accent Instrument
 
@@ -72,7 +72,7 @@ The reason why the sequence is only looping the `1st PART` is due to the fact th
 
 By default, the `1st PART` of all 16 patterns has a pattern length of 16 and the `2nd PART` has a pattern length of 0. To set the pattern length of a part you need to have the desired part selected via the mode knob as well as the desired pattern selected the same way you did when selecting which pattern to program beats into.
  
-Now to choose the desired pattern length you drag the `CLEAR` button (below the mode knob) to the step button which has the step number that corresponds to the desired pattern length.
+Now to choose the desired pattern length you drag the `CLEAR` button (below the mode knob) to the step button which has the step number that corresponds to the desired pattern length. On a MIDI controller, press Record and then the pad for that step.
 
 <img class='gfyitem' data-id='ExaltedSlipperyEidolonhelvum' data-autoplay='false'>
 
@@ -93,7 +93,7 @@ The four positions run top to bottom:
 3. 4 steps in a beat. This is the normal setting, and it is where the switch starts.
 4. 8 steps in a beat
 
-The rows of notes above the step buttons draw those same four groupings. The bright row is the one in use. Click a row to select it, or move the switch itself.
+The rows of notes above the step buttons draw those same four groupings. The bright row is the one in use. Click a row to select it, or move the switch itself. On the default MIDI mapping, knob 7 is pre-scale. Clockwise moves the switch up, toward 1. Counterclockwise moves it down, toward 4.
 
 Pre-scale is not the pattern length. Pattern length is how many steps are in the part. Pre-scale is how those steps are grouped into a beat.
 
@@ -134,13 +134,13 @@ To trigger an `INTRO/FILL IN` you need to press the `TAP` button which schedules
 
 `PLAY` and `COMPOSE` on the mode knob arrange the patterns you already programmed into a song.
 
-There are 12 rhythm tracks. In `PLAY` and `COMPOSE`, the `INSTRUMENT-SELECT` knob selects the track instead of a drum. The numbers 1 through 12 printed around that knob are the track numbers.
+There are 12 rhythm tracks. In `PLAY` and `COMPOSE`, the `INSTRUMENT-SELECT` knob selects the track instead of a drum. The numbers 1 through 12 printed around that knob are the track numbers. On a MIDI controller, the encoder selects the track while the mode is `PLAY` or `COMPOSE`.
 
 ### Composing a Track
 
 Turn the mode knob to `COMPOSE` and choose a track.
 
-Press the red `CLEAR` button to empty that track.
+Press the red `CLEAR` button to empty that track. On a MIDI controller, Record does the same thing while the mode is `COMPOSE`.
 
 Choose the pattern that should play first, the same way you do in `MANUAL PLAY`. Press `TAP` if that first bar should be the selected intro/fill instead of the basic rhythm.
 
@@ -166,11 +166,43 @@ To clear a pattern you first need to change the mode knob to `PATTERN CLEAR`:
 
 ![Pattern Clear Mode](images/pattern-clear-mode.png)
 
-Then select the pattern that you want to clear using the step buttons in the same way you've done for selecting which patterns to edit in the `1st PART` and `2nd PART` modes. To finally perform a pattern clear just press the clear button (same button you used to drag in order to set pattern length) and both the `1st PART` and `2nd PART` of that pattern will be cleared. Note that the pattern lengths for both parts will not be affected.
+Then select the pattern that you want to clear using the step buttons in the same way you've done for selecting which patterns to edit in the `1st PART` and `2nd PART` modes. To finally perform a pattern clear just press the clear button (same button you used to drag in order to set pattern length) and both the `1st PART` and `2nd PART` of that pattern will be cleared. On a MIDI controller, Record does this while the mode is `PATTERN CLEAR`. Note that the pattern lengths for both parts will not be affected.
 
 ![Pattern Clear Button](images/pattern-clear-button.png)
 
 Another selection to keep in mind is the `BASIC VARIATION` switch which will determine which variations of the selected pattern will be cleared.
+
+## MIDI Controller
+
+A MIDI controller can drive the panel. Chrome or Edge is required. Firefox and Safari do not implement Web MIDI.
+
+The header shows a Controller light. Green means a controller is connected. Click that light, or click Controller in the footer, to open settings and connect. The browser asks for MIDI permission.
+
+Settings starts on the MPK Mini 4 mapping. It can switch to an MPK Mini mk3 or an MPK Mini Plus, or you can type a CC number for each control and a note for each pad. A blank control is unused. The mapping stays in the browser and is not written into a pattern save.
+
+Hover a control to see which input drives it. The control glows while the controller moves it. The selected instrument column is outlined.
+
+On the MPK Mini 4 mapping:
+
+- Knobs 1–3 are the level and the two extra controls of the selected instrument: tone, decay, snappy, or tuning. A knob sits idle when that instrument has no such control.
+- Knob 4 is the mode: Pattern Clear, 1st Part, 2nd Part, Manual Play, Play, and Compose.
+- Knob 5 is auto fill in.
+- Knob 6 is fine tempo.
+- Knob 7 is pre-scale. Clockwise moves the switch toward 1. Counterclockwise moves it toward 4.
+- Knob 8 is the master volume.
+- The mod wheel is the tempo.
+- The encoder selects the instrument. In Play and Compose it selects rhythm track 1–12. Press it to switch conga/tom, claves/rimshot, or maracas/handclap.
+- − and + step the basic variation. Hold Shift with − or + for the I/F variation.
+- The pads are the 16 steps. Bank A is steps 1–8 and bank B is steps 9–16. The top row of a bank is the first four of those steps.
+- Play and Stop both start and stop the sequencer.
+- Tap, while a pattern is running in 1st Part or 2nd Part, adds a trigger for the selected instrument on the nearest step. In Manual Play and Compose it schedules the intro/fill.
+- Record clears the selected pattern in Pattern Clear, and empties the selected rhythm track in Compose. In 1st Part or 2nd Part, press Record and then a pad within four seconds to set the pattern length to that step.
+
+The Mini mk3 and Mini Plus presets use knobs CC 70–77, the mod wheel, and the same pad notes. Their transport, encoder, and Record buttons are left blank until you assign them.
+
+Sound can stay in the browser. In settings, choose a MIDI output to send General MIDI drum notes on channel 10 instead. The page stays quiet while that output is selected. The accent level raises the velocity of accented notes. Fully down adds none.
+
+The pattern clock still needs one click on the page before the browser will run it. If Play is on and that click has not happened, the page asks you to enable audio.
 
 ## Sharing
 
