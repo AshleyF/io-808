@@ -398,7 +398,8 @@ export function connectMpk() {
   ) {
     publish({
       status: "error",
-      message: "This browser has no Web MIDI. Open the page in Chrome or Edge."
+      message:
+        "This browser has no Web MIDI. Open the page in Chrome, Edge, or the MIDIWeb browser on iPhone or iPad."
     });
     return Promise.resolve();
   }

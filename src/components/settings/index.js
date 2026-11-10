@@ -571,8 +571,9 @@ export const SettingsDialog = () => {
           </button>
         </div>
         <p {...stylex.props(styles.lead)}>
-          The green light in the header means a controller is connected. Chrome
-          or Edge is required. Firefox and Safari have no Web MIDI.
+          The green light in the header means a controller is connected. Chrome,
+          Edge, or the MIDIWeb browser on iPhone and iPad can connect a
+          controller. Firefox and Safari have no Web MIDI.
         </p>
         <p {...stylex.props(styles.status)}>{snap.message}</p>
         <button

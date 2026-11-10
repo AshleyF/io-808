@@ -174,7 +174,7 @@ Another selection to keep in mind is the `BASIC VARIATION` switch which will det
 
 ## MIDI Controller
 
-A MIDI controller can drive the panel. Chrome or Edge is required. Firefox and Safari do not implement Web MIDI.
+A MIDI controller can drive the panel in Chrome or Edge, and in the MIDIWeb browser on iPhone and iPad. Firefox and Safari do not implement Web MIDI.
 
 The header shows a Controller light. Green means a controller is connected. Click that light, or click Controller in the footer, to open settings and connect. The browser asks for MIDI permission.
 
