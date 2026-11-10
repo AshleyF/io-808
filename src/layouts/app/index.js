@@ -18,6 +18,12 @@ import {
   ConnectedLoadButton,
   ConnectedResetButton
 } from "./connectedComponents";
+import {
+  ControllerLink,
+  ControllerStatus,
+  SettingsDialog
+} from "components/settings";
+import AudioUnlock from "components/audioUnlock";
 
 const GithubLink = () => {
   return (
@@ -98,6 +104,19 @@ const styles = stylex.create({
   },
   resetButton: {
     height: 35
+  },
+  headerTools: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  footerLinks: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  footerMpk: {
+    marginLeft: 22
   },
 
   footerWrapper: {
@@ -201,7 +220,10 @@ const AppLayout = React.memo(
               />
               <ConnectedResetButton xstyle={styles.resetButton} />
             </div>
-            <GithubLink />
+            <div {...stylex.props(styles.headerTools)}>
+              <ControllerStatus />
+              <GithubLink />
+            </div>
           </div>
           <div {...stylex.props(styles.appWrapper)}>
             <div {...stylex.props(styles.topBottomDivider)} />
@@ -217,7 +239,7 @@ const AppLayout = React.memo(
             </div>
           </div>
           <div {...stylex.props(styles.footerWrapper)}>
-            <div>
+            <div {...stylex.props(styles.footerLinks)}>
               <a
                 {...stylex.props(
                   themeStyles.labelBase,
@@ -230,6 +252,9 @@ const AppLayout = React.memo(
               >
                 Tutorial
               </a>
+              <div {...stylex.props(styles.footerMpk)}>
+                <ControllerLink />
+              </div>
             </div>
             <div
               {...stylex.props(
@@ -263,6 +288,8 @@ const AppLayout = React.memo(
             </div>
           </div>
         </div>
+        <SettingsDialog />
+        <AudioUnlock />
       </div>
     );
   },

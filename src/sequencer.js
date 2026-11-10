@@ -8,7 +8,7 @@ import Limiter from "synth/effects/limiter";
 import VCA from "synth/basics/vca";
 import stepTrigger from "synth/stepTrigger";
 import { clearStepWindow, recordStepWindow } from "stepClock";
-import AudioCtxContext from "audioCtxContext";
+import AudioCtxContext, { subscribeAudioReady } from "audioCtxContext";
 
 import { equalPower } from "helpers";
 
@@ -52,6 +52,11 @@ const Sequencer = React.memo(() => {
     handleBlinkTick: blinkTickAction
   } = useSequencerActions();
   const { getAudioContext, getClock } = React.useContext(AudioCtxContext);
+  const [audioEpoch, setAudioEpoch] = React.useState(0);
+  React.useEffect(
+    () => subscribeAudioReady(() => setAudioEpoch(epoch => epoch + 1)),
+    []
+  );
 
   // Instance Refs ===========
   const previousStoreStateRef = React.useRef(storeState);
@@ -171,7 +176,8 @@ const Sequencer = React.memo(() => {
       storeState.fineTempo,
       storeState.playing,
       storeState.preScalePosition,
-      storeState.tempo
+      storeState.tempo,
+      audioEpoch
     ]
   );
 
