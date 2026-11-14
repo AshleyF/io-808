@@ -193,7 +193,7 @@ On the MPK Mini 4 mapping:
 - The mod wheel is the tempo.
 - The encoder selects the instrument. In Play and Compose it selects rhythm track 1–12. Press it to switch conga/tom, claves/rimshot, or maracas/handclap.
 - − and + step the basic variation. Hold Shift with − or + for the I/F variation.
-- The pads are the 16 steps. Bank A is steps 1–8 and bank B is steps 9–16. The top row of a bank is the first four of those steps.
+- The pads are the 16 steps. Bank A is steps 1–8 and bank B is steps 9–16. The top row of a bank is the first four of those steps. On pre-scale 1 and 2 the colors follow the groups of three: red, orange, yellow, white, then red again, and step 16 is orange. Pre-scale 3 and 4 keep those row colors.
 - Play and Stop both start and stop the sequencer.
 - Tap, while a pattern is running in 1st Part or 2nd Part, adds a trigger for the selected instrument on the nearest step. In Manual Play and Compose it schedules the intro/fill.
 - Record clears the selected pattern in Pattern Clear, and empties the selected rhythm track in Compose. In 1st Part or 2nd Part, press Record and then a pad within four seconds to set the pattern length to that step.
