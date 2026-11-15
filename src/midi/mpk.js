@@ -71,6 +71,10 @@ let lengthArmedAt = 0;
 let seenState = null;
 let statusLine = "";
 let painted = new Array(16);
+let padJobs = [];
+let padJobTimer = null;
+let padRefresh = null;
+let seenBank = null;
 let lastBytes = "";
 let lastBytesAt = 0;
 const held = new Set();
@@ -134,9 +138,52 @@ function resetHardwareCache() {
   ownerFor = null;
   lastScreen = "";
   painted = new Array(16);
+  padJobs = [];
+  seenBank = null;
+  if (padJobTimer) {
+    window.clearTimeout(padJobTimer);
+    padJobTimer = null;
+  }
   Object.keys(knobSeen).forEach(key => delete knobSeen[key]);
   Object.keys(knobSent).forEach(key => delete knobSent[key]);
   Object.keys(knobLive).forEach(key => delete knobLive[key]);
+}
+
+function queuePad(step) {
+  if (padJobs.indexOf(step) !== -1) return;
+  padJobs.push(step);
+  if (padJobTimer == null) padJobTimer = window.setTimeout(runPadJob, 0);
+}
+
+function paintAllPads() {
+  for (let step = 0; step < 16; step++) queuePad(step);
+}
+
+function runPadJob() {
+  padJobTimer = null;
+  if (!output || !sysexOk || !redux) {
+    padJobs = [];
+    return;
+  }
+  const step = padJobs.shift();
+  if (step == null) return;
+  const state = redux.getState();
+  const scale = state.preScalePosition == null ? 2 : state.preScalePosition;
+  const on = !!STEP_LIGHTS[step](state);
+  painted[step] = (on ? 1 : 0) + scale * 2;
+  const rgb = stepRgb(step, scale);
+  send(padColorMessage(STEPS[step].pad, on ? rgb : dimRgb(rgb)));
+  if (padJobs.length) padJobTimer = window.setTimeout(runPadJob, 4);
+}
+
+function ensurePadRefresh() {
+  if (padRefresh) return;
+  // The bank button reloads the saved pad colors and does not tell us.
+  // Send the set again so a bank change, or a dropped burst, does not stick.
+  padRefresh = window.setInterval(() => {
+    if (!redux || !output || !sysexOk) return;
+    paintAllPads();
+  }, 400);
 }
 
 function send(bytes) {
@@ -322,15 +369,13 @@ export function syncHardware(state) {
   const lines = screenLines(state);
   if (!output || !sysexOk) return;
   ensureOwner();
+  ensurePadRefresh();
   const scale = state.preScalePosition == null ? 2 : state.preScalePosition;
   for (let step = 0; step < 16; step++) {
     const on = !!STEP_LIGHTS[step](state);
     const mark = (on ? 1 : 0) + scale * 2;
     if (painted[step] === mark) continue;
-    painted[step] = mark;
-    const pad = STEPS[step];
-    const rgb = stepRgb(step, scale);
-    send(padColorMessage(pad.pad, on ? rgb : dimRgb(rgb)));
+    queuePad(step);
   }
   const key = lines.join("\n");
   if (key !== lastScreen) {
@@ -863,6 +908,10 @@ function onMidi(event) {
   const data = event.data;
   if (!data || data.length < 1) return;
   const status = data[0];
+  if (status === 0xf0) {
+    paintAllPads();
+    return;
+  }
   if (status >= 0xf0) return;
   const key = status + ":" + data[1] + ":" + data[2];
   const now = performance.now();
@@ -873,6 +922,13 @@ function onMidi(event) {
   const cmd = status & 0xf0;
   if (cmd === 0x90) {
     const velocity = data[2] || 0;
+    if (data[1] >= 36 && data[1] <= 51) {
+      const bank = data[1] >= 44 ? 1 : 0;
+      if (bank !== seenBank) {
+        seenBank = bank;
+        paintAllPads();
+      }
+    }
     if (velocity === 0) return;
     const pads = getController().map.pads;
     let step = null;
