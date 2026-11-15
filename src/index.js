@@ -15,8 +15,11 @@ import { PersistGate } from "redux-persist/integration/react";
 import * as stylex from "@stylexjs/stylex";
 
 import { store, persistor } from "store";
+import { attachMpk } from "midi/mpk";
 import AppLayout from "layouts/app";
 import { KnobOverlayManager } from "components/knob/overlay";
+
+attachMpk(store);
 
 const Sequencer = React.lazy(() => import("./sequencer"));
 

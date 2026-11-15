@@ -35,6 +35,8 @@ import { getCurrentPart } from "selectors/common";
 
 // helpers
 import { stepKey } from "helpers";
+import { drumNote, isMidiMode, playDrum } from "midi/out";
+import { currentAudioContext } from "audioCtxContext";
 
 const drumModuleMapping = [
   [BASS_DRUM, bassDrum],
@@ -84,16 +86,77 @@ function getAccentGain(
     currentVariation,
     currentStep
   );
-  if (!storeState.steps[stepId]) return 1;
+  const accentActive = storeState.steps[stepId];
+  if (!accentActive) return 1;
 
-  // The original circuit raises the trigger pulse on an accented step.
-  // Level 0 leaves that step at the instrument level.
+  // Boost the accented step. Level 0 leaves it at the instrument level.
   const accentLevel = storeState.instrumentState[ACCENT].level || 0;
   const amount = Math.max(0, Math.min(100, accentLevel)) / 100;
   return 1 + amount * 1.5;
 }
 
+function sendMidiNotes(storeState) {
+  const currentPattern = patternSelector(storeState);
+  const currentPart = getCurrentPart(storeState);
+  const currentVariation = variationSelector(storeState);
+  const currentStep = stepSelector(storeState);
+  const accentStep = stepKey(
+    currentPattern,
+    ACCENT,
+    currentPart,
+    currentVariation,
+    currentStep
+  );
+  const accent = !!storeState.steps[accentStep];
+
+  drumModuleMapping.forEach(([drumID]) => {
+    const stepID = stepKey(
+      currentPattern,
+      drumID,
+      currentPart,
+      currentVariation,
+      currentStep
+    );
+    if (!storeState.steps[stepID]) return;
+    const drumState = storeState.instrumentState[drumID];
+    const level = drumState.level || 0;
+    let velocity = Math.round((level / 100) * 110) + 1;
+    if (accent) {
+      const accentLevel = storeState.instrumentState[ACCENT].level || 0;
+      const boost = Math.round((Math.max(0, Math.min(100, accentLevel)) / 100) * 36);
+      velocity = Math.min(127, velocity + boost);
+    }
+    playDrum(drumNote(drumID, drumState.selector), velocity);
+  });
+}
+
+function silencePrevious(drumID, audioCtx, when) {
+  if (previousTriggers[drumID] == null) return;
+  const prevModule = previousTriggers[drumID];
+  prevModule.amplitude.cancelScheduledValues(audioCtx.currentTime);
+  prevModule.amplitude.setValueAtTime(
+    prevModule.amplitude.value,
+    audioCtx.currentTime
+  );
+  prevModule.amplitude.linearRampToValueAtTime(0, when);
+  previousTriggers[drumID] = null;
+}
+
+export function silenceVoices() {
+  const audioCtx = currentAudioContext();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  Object.keys(previousTriggers).forEach(drumID => {
+    silencePrevious(drumID, audioCtx, now);
+  });
+}
+
 export default function(storeState, deadline, destination, clock, audioCtx) {
+  if (isMidiMode()) {
+    sendMidiNotes(storeState);
+    return;
+  }
+
   // select relevant values from the global state
   const currentPattern = patternSelector(storeState);
   const currentPart = getCurrentPart(storeState);
@@ -129,19 +192,7 @@ export default function(storeState, deadline, destination, clock, audioCtx) {
     const drumState = storeState.instrumentState[drumID];
 
     if (storeState.steps[stepID]) {
-      // set gain on previous triggers to zero
-      if (previousTriggers[drumID] != null) {
-        const prevModule = previousTriggers[drumID];
-        prevModule.amplitude.cancelScheduledValues(audioCtx.currentTime);
-        prevModule.amplitude.setValueAtTime(
-          prevModule.amplitude.value,
-          audioCtx.currentTime
-        );
-        prevModule.amplitude.linearRampToValueAtTime(0, deadline);
-
-        // remove reference from cache to let the garbage collector know to clean it up
-        previousTriggers[drumID] = null;
-      }
+      silencePrevious(drumID, audioCtx, deadline);
 
       // start a new trigger and store output gain node in cache
       previousTriggers[drumID] = drumModuleTrigger(

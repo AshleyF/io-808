@@ -39,3 +39,5 @@ Used for styling of all React components. All of the styles in the webapp are do
 `PLAY` and `COMPOSE` store 12 rhythm tracks, 64 bars each. `PRE-SCALE` sets how many steps are in a beat: 3, 6, 4, or 8. While a pattern is running in `1st PART` or `2nd PART`, `TAP` adds a trigger for the selected instrument on the nearest step. In `MANUAL PLAY` and `COMPOSE`, `TAP` schedules the intro/fill.
 
 The accent level raises the steps where accent is programmed. Fully down leaves those steps at the instrument level. Fully up is about two and a half times as loud.
+
+A MIDI controller can drive the panel. Chrome, Edge, or the MIDIWeb browser on iPhone and iPad is required. The Controller light in the header opens settings, where the default mapping is an MPK Mini 4 and each knob, pad, and button can be remapped. That mapping stays in the browser, separate from a pattern save. Sound can stay in the browser or go out as General MIDI drum notes on channel 10. Hover a control to see which input drives it.
