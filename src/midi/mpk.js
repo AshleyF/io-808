@@ -33,7 +33,8 @@ import {
   STEPS,
   dimRgb,
   instrumentById,
-  knobLine
+  knobLine,
+  stepRgb
 } from "midi/map";
 import { getController, subscribeController } from "midi/controllerMap";
 import {
@@ -321,12 +322,15 @@ export function syncHardware(state) {
   const lines = screenLines(state);
   if (!output || !sysexOk) return;
   ensureOwner();
+  const scale = state.preScalePosition == null ? 2 : state.preScalePosition;
   for (let step = 0; step < 16; step++) {
     const on = !!STEP_LIGHTS[step](state);
-    if (painted[step] === on) continue;
-    painted[step] = on;
+    const mark = (on ? 1 : 0) + scale * 2;
+    if (painted[step] === mark) continue;
+    painted[step] = mark;
     const pad = STEPS[step];
-    send(padColorMessage(pad.pad, on ? pad.rgb : dimRgb(pad.rgb)));
+    const rgb = stepRgb(step, scale);
+    send(padColorMessage(pad.pad, on ? rgb : dimRgb(rgb)));
   }
   const key = lines.join("\n");
   if (key !== lastScreen) {

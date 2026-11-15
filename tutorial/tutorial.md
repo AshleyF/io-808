@@ -95,7 +95,7 @@ The four positions run top to bottom:
 
 The rows of notes above the step buttons draw those same four groupings. The bright row is the one in use. Click a row to select it, or move the switch itself.
 
-On a MIDI controller, knob 7 is pre-scale. Clockwise moves the switch up, toward 1. Counterclockwise moves it down, toward 4.
+On a MIDI controller, knob 7 is pre-scale. Clockwise moves the switch up, toward 1. Counterclockwise moves it down, toward 4. On pre-scale 1 and 2 the pad colors follow the groups of three: red, orange, yellow, white, then red again, and step 16 is orange. Pre-scale 3 and 4 keep the usual row colors.
 
 Pre-scale is not the pattern length. Pattern length is how many steps are in the part. Pre-scale is how those steps are grouped into a beat.
 

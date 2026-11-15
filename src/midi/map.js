@@ -291,6 +291,16 @@ GROUP_DEFS.forEach(group => {
   });
 });
 
+// Pre-scale 1 and 2 count in threes. The four colors repeat, so step 16
+// starts the next color. Pre-scale 3 and 4 keep the printed row colors.
+export function stepRgb(step, preScalePosition) {
+  const position = preScalePosition == null ? 2 : preScalePosition;
+  if (position < 2) {
+    return GROUP_DEFS[Math.floor(step / 3) % GROUP_DEFS.length].rgb;
+  }
+  return STEPS[step].rgb;
+}
+
 export function instrumentById(id) {
   for (let i = 0; i < INSTRUMENTS.length; i++) {
     if (INSTRUMENTS[i].id === id) return INSTRUMENTS[i];
